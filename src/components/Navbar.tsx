@@ -49,7 +49,7 @@ export const Navbar = () => {
               <Music className="w-4 h-4 text-gold absolute -bottom-1 -right-1" />
             </div>
             <span className="font-display text-xl font-semibold tracking-tight">
-              Serenade
+              MemoreHaze
             </span>
           </a>
 
