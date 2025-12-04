@@ -125,6 +125,22 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
   };
 
   const handleSubmit = () => {
+    if (!selectedTier) {
+      toast({
+        title: "Please select a plan",
+        description: "Choose a plan (Momentum or Everlasting) before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!selectedTemplate) {
+      toast({
+        title: "Please select a template",
+        description: "Choose a template design before submitting.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
       title: "Order Submitted! 🎉",
       description: "We'll start creating your personalized gift right away.",

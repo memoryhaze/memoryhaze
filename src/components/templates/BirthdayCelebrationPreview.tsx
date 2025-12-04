@@ -1,7 +1,31 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Gift, Play, Pause, X, Music, PartyPopper, Cake, Sparkles } from "lucide-react";
+import { Gift, Play, Pause, X, Music, PartyPopper, Cake, Sparkles, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const sampleLyrics = `Verse 1:
+Today's the day we celebrate
+The wonderful person that you are
+With every candle on your cake
+You shine just like a star
+
+Chorus:
+Happy birthday to you
+May all your dreams come true
+Another year of magic
+Another year of you!
+
+Verse 2:
+The memories we've made together
+Are gifts that last forever more
+Through laughter, joy, and every weather
+Each moment I adore
+
+Bridge:
+So blow out all your candles bright
+And make a wish tonight
+'Cause you deserve the very best
+On this your special night!`;
 
 interface BirthdayCelebrationPreviewProps {
   onClose: () => void;
@@ -76,6 +100,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebr
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showLyrics, setShowLyrics] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -255,9 +280,18 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebr
               </motion.button>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Music className="w-4 h-4 text-purple-600" />
-                  <span className="text-purple-900 font-bold">🎵 Your Birthday Song!</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-purple-600" />
+                    <span className="text-purple-900 font-bold">🎵 Your Birthday Song!</span>
+                  </div>
+                  <button
+                    onClick={() => setShowLyrics(!showLyrics)}
+                    className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-800 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                  </button>
                 </div>
                 <div className="h-3 bg-white/50 rounded-full overflow-hidden">
                   <motion.div
@@ -271,6 +305,25 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebr
                 </div>
               </div>
             </div>
+
+            {/* Lyrics Panel */}
+            <AnimatePresence>
+              {showLyrics && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 pt-4 border-t border-purple-300/50">
+                    <pre className="text-sm text-purple-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                      {sampleLyrics}
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 

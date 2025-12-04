@@ -1,7 +1,31 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Heart, Play, Pause, X, Music, Volume2 } from "lucide-react";
+import { Heart, Play, Pause, X, Music, Volume2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const sampleLyrics = `Verse 1:
+In the morning light, I see your face
+Every moment with you is a sacred space
+Through the years we've grown, hand in hand
+Building our dreams on love's soft sand
+
+Chorus:
+You are my sunshine, my endless sky
+The reason I laugh, the reason I fly
+Together forever, our hearts intertwined
+A love like ours is so hard to find
+
+Verse 2:
+Remember the day we first met
+A memory I'll never forget
+Your smile lit up my darkest night
+And everything finally felt right
+
+Bridge:
+Through storms and calm, we stand as one
+Our journey together has just begun
+I'll love you more with each passing day
+Forever and always, come what may`;
 
 interface MinimalistLovePreviewProps {
   onClose: () => void;
@@ -20,6 +44,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect }: MinimalistLovePrevi
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showLyrics, setShowLyrics] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -136,9 +161,18 @@ export const MinimalistLovePreview = ({ onClose, onSelect }: MinimalistLovePrevi
               </button>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Music className="w-4 h-4 text-rose-400" />
-                  <span className="text-gray-800 font-medium">Your Custom Song</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-rose-400" />
+                    <span className="text-gray-800 font-medium">Your Custom Song</span>
+                  </div>
+                  <button
+                    onClick={() => setShowLyrics(!showLyrics)}
+                    className="flex items-center gap-1 text-xs text-rose-500 hover:text-rose-600 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                  </button>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <motion.div
@@ -154,6 +188,25 @@ export const MinimalistLovePreview = ({ onClose, onSelect }: MinimalistLovePrevi
 
               <Volume2 className="w-5 h-5 text-gray-400" />
             </div>
+
+            {/* Lyrics Panel */}
+            <AnimatePresence>
+              {showLyrics && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 pt-4 border-t border-rose-100">
+                    <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                      {sampleLyrics}
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 

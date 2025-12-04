@@ -1,7 +1,31 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useState, useEffect } from "react";
-import { Sparkles, Play, Pause, X, Music, Crown, Star } from "lucide-react";
+import { Sparkles, Play, Pause, X, Music, Crown, Star, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const sampleLyrics = `Verse 1:
+Twenty-five golden years have passed us by
+Like stars that shimmer across the sky
+Through every joy and every tear
+You've been my strength year after year
+
+Chorus:
+Golden love, forever true
+Every day I fall for you
+Hand in hand through time we've grown
+The greatest love I've ever known
+
+Verse 2:
+The memories we've made along the way
+Are treasures that will never fade away
+Our children's laughter, our shared dreams
+Life's even better than it seems
+
+Bridge:
+Here's to the years still yet to come
+Our love's a song that's never done
+Forever golden, forever bright
+My love for you burns like eternal light`;
 
 interface GrandAnniversaryPreviewProps {
   onClose: () => void;
@@ -41,6 +65,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryP
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [showLyrics, setShowLyrics] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -189,9 +214,18 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryP
               </button>
               
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-2">
-                  <Music className="w-4 h-4 text-amber-600" />
-                  <span className="text-amber-900 font-semibold">Our Golden Love Song</span>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-amber-600" />
+                    <span className="text-amber-900 font-semibold">Our Golden Love Song</span>
+                  </div>
+                  <button
+                    onClick={() => setShowLyrics(!showLyrics)}
+                    className="flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                  </button>
                 </div>
                 <div className="h-3 bg-amber-200 rounded-full overflow-hidden">
                   <motion.div
@@ -205,6 +239,25 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryP
                 </div>
               </div>
             </div>
+
+            {/* Lyrics Panel */}
+            <AnimatePresence>
+              {showLyrics && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 pt-4 border-t border-amber-200">
+                    <pre className="text-sm text-amber-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                      {sampleLyrics}
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 
