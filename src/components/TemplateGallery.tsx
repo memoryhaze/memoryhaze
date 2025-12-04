@@ -3,7 +3,12 @@ import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { Eye, Check, Heart, Sparkles, Star, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
+import {
+  MinimalistLovePreview,
+  GrandAnniversaryPreview,
+  BirthdayCelebrationPreview,
+  RomanticEveningPreview,
+} from "@/components/templates";
 interface Template {
   id: string;
   name: string;
@@ -156,64 +161,41 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
         </div>
 
         {/* Preview Modal */}
-        {previewTemplate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-foreground/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-            onClick={() => setPreviewTemplate(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="bg-card rounded-2xl shadow-elevated max-w-2xl w-full max-h-[80vh] overflow-hidden"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {(() => {
-                const template = templates.find((t) => t.id === previewTemplate);
-                if (!template) return null;
-                const isDark = template.id === "romantic-evening";
-
-                return (
-                  <>
-                    <div className={`h-64 bg-gradient-to-br ${template.gradient} relative p-8`}>
-                      <div className={`absolute top-6 right-6 w-16 h-16 rounded-full ${template.accent} flex items-center justify-center`}>
-                        <template.icon className={`w-8 h-8 ${isDark ? "text-white" : "text-foreground/60"}`} />
-                      </div>
-                      <div className="absolute bottom-8 left-8 right-8 space-y-3">
-                        <div className={`h-6 rounded ${isDark ? "bg-white/20" : "bg-foreground/10"} w-3/4`} />
-                        <div className={`h-4 rounded ${isDark ? "bg-white/10" : "bg-foreground/5"} w-1/2`} />
-                        <div className={`h-3 rounded ${isDark ? "bg-white/10" : "bg-foreground/5"} w-2/3`} />
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="font-display text-2xl font-bold text-foreground mb-2">
-                        {template.name}
-                      </h3>
-                      <p className="text-muted-foreground mb-6">
-                        {template.preview}
-                      </p>
-                      <div className="flex gap-3">
-                        <Button
-                          variant="hero"
-                          onClick={() => {
-                            onSelectTemplate(template.id);
-                            setPreviewTemplate(null);
-                          }}
-                        >
-                          Select This Template
-                        </Button>
-                        <Button variant="outline" onClick={() => setPreviewTemplate(null)}>
-                          Close
-                        </Button>
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </motion.div>
-          </motion.div>
+        {previewTemplate === "minimalist-love" && (
+          <MinimalistLovePreview
+            onClose={() => setPreviewTemplate(null)}
+            onSelect={() => {
+              onSelectTemplate("minimalist-love");
+              setPreviewTemplate(null);
+            }}
+          />
+        )}
+        {previewTemplate === "grand-anniversary" && (
+          <GrandAnniversaryPreview
+            onClose={() => setPreviewTemplate(null)}
+            onSelect={() => {
+              onSelectTemplate("grand-anniversary");
+              setPreviewTemplate(null);
+            }}
+          />
+        )}
+        {previewTemplate === "birthday-celebration" && (
+          <BirthdayCelebrationPreview
+            onClose={() => setPreviewTemplate(null)}
+            onSelect={() => {
+              onSelectTemplate("birthday-celebration");
+              setPreviewTemplate(null);
+            }}
+          />
+        )}
+        {previewTemplate === "romantic-evening" && (
+          <RomanticEveningPreview
+            onClose={() => setPreviewTemplate(null)}
+            onSelect={() => {
+              onSelectTemplate("romantic-evening");
+              setPreviewTemplate(null);
+            }}
+          />
         )}
       </div>
     </section>
