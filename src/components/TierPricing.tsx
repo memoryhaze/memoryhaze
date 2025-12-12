@@ -165,7 +165,7 @@ export const TierPricing = ({ onSelectTier }: TierPricingProps) => {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="text-center text-muted-foreground text-sm mt-12"
         >
-          ✨ 100% Satisfaction Guarantee • Secure Payment • Delivered Digitally
+          🚚 Delivery in 24–48 hours • 🔒 Secure checkout • 🔗 Private shareable link
         </motion.p>
       </div>
     </section>

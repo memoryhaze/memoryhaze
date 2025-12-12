@@ -11,6 +11,8 @@ import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
+import Memories from "./pages/Memories";
+import MemoriesViewer from "./pages/MemoriesViewer";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +28,8 @@ const App = () => (
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/memories" element={<Memories />} />
+            <Route path="/memories/:templateId" element={<MemoriesViewer />} />
             <Route
               path="/admin"
               element={

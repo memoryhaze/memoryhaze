@@ -30,6 +30,7 @@ On this your special night!`;
 interface BirthdayCelebrationPreviewProps {
   onClose: () => void;
   onSelect: () => void;
+  variant?: "modal" | "page";
 }
 
 const samplePhotos = [
@@ -96,7 +97,7 @@ const Balloon = ({ delay, x, color }: { delay: number; x: number; color: string 
   </motion.div>
 );
 
-export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebrationPreviewProps) => {
+export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal" }: BirthdayCelebrationPreviewProps) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -119,14 +120,15 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebr
     };
   }, [isPlaying]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-hidden"
-      onClick={onClose}
-    >
+  if (variant === "modal") {
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-hidden"
+        onClick={onClose}
+      >
       {/* Confetti */}
       {Array.from({ length: 20 }).map((_, i) => (
         <Confetti key={i} delay={i * 0.2} x={Math.random() * 100} />
@@ -341,5 +343,158 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect }: BirthdayCelebr
         </div>
       </motion.div>
     </motion.div>
+    );
+  }
+
+  // Page variant
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-indigo-100">
+      <div className="pt-28 pb-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Decorative elements could be simplified for page */}
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-8"
+          >
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <PartyPopper className="w-8 h-8 text-purple-500" />
+              <Cake className="w-10 h-10 text-pink-500" />
+              <Gift className="w-8 h-8 text-indigo-500" />
+            </div>
+            <motion.h1 
+              className="font-display text-5xl md:text-7xl mb-3 bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 bg-clip-text text-transparent"
+              animate={{ scale: [1, 1.02, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              Happy Birthday!
+            </motion.h1>
+            <p className="text-purple-700 text-2xl font-medium">Emily turns 25! 🎉</p>
+          </motion.div>
+
+          {/* Photo carousel */}
+          <div className="relative mb-8">
+            <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentPhotoIndex}
+                  src={samplePhotos[currentPhotoIndex]}
+                  alt="Memory"
+                  initial={{ opacity: 0, scale: 1.2, rotate: 5 }}
+                  animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                  exit={{ opacity: 0, scale: 0.8, rotate: -5 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </AnimatePresence>
+              <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent" />
+            </div>
+            <div className="flex justify-center gap-2 mt-4">
+              {samplePhotos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPhotoIndex(i)}
+                  className={`transition-all ${
+                    i === currentPhotoIndex 
+                      ? "w-8 h-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" 
+                      : "w-3 h-3 rounded-full bg-purple-200 hover:bg-purple-300"
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Message */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mb-8 bg-white/50 backdrop-blur rounded-2xl p-6"
+          >
+            <p className="text-purple-800 text-xl leading-relaxed">
+              🎂 Wishing you the most amazing birthday filled with love, laughter, 
+              and all your heart desires! May this year bring you endless joy and adventures! 🎈
+            </p>
+          </motion.div>
+
+          {/* Music player */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 rounded-2xl p-6 shadow-xl"
+          >
+            <div className="flex items-center gap-4">
+              <motion.button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 flex items-center justify-center text-white shadow-lg"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1" />}
+              </motion.button>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-purple-600" />
+                    <span className="text-purple-900 font-bold">🎵 Your Birthday Song!</span>
+                  </div>
+                  <button
+                    onClick={() => setShowLyrics(!showLyrics)}
+                    className="flex items-center gap-1 text-xs text-purple-700 hover:text-purple-800 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                  </button>
+                </div>
+                <div className="h-3 bg-white/50 rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-purple-600 mt-1 font-medium">
+                  <span>{Math.floor(progress * 2.8 / 100)}:{String(Math.floor((progress * 2.8) % 60)).padStart(2, '0')}</span>
+                  <span>2:48</span>
+                </div>
+              </div>
+            </div>
+            <AnimatePresence>
+              {showLyrics && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 pt-4 border-t border-purple-300/50">
+                    <pre className="text-sm text-purple-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
+                      {sampleLyrics}
+                    </pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Footer */}
+          <div className="flex justify-center gap-4 mt-8">
+            <Button variant="outline" onClick={onClose} className="border-purple-300 text-purple-700 hover:bg-purple-50">
+              Close
+            </Button>
+            <Button 
+              onClick={onSelect}
+              className="bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 text-white hover:opacity-90"
+            >
+              Select This Template
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };

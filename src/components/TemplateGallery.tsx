@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Eye, Check, Heart, Sparkles, Star, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -67,6 +68,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   return (
     <section id="templates" className="py-24 bg-muted/30 relative">
@@ -83,7 +85,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
             Choose Your Template
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Select a beautiful design that matches the mood and occasion of your gift.
+            Select a beautiful design that matches the occasion of your gift.
           </p>
         </motion.div>
 
@@ -122,7 +124,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
                     </div>
 
                     {/* Hover overlay */}
-                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
                       <Button
                         variant="secondary"
                         size="sm"
@@ -134,6 +136,17 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
                       >
                         <Eye className="w-4 h-4 mr-1" />
                         Preview
+                      </Button>
+                      <Button
+                        variant="hero"
+                        size="sm"
+                        className="shadow-lg"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/memories/${template.id}`);
+                        }}
+                      >
+                        Fullscreen
                       </Button>
                     </div>
 

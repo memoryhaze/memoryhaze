@@ -1,8 +1,25 @@
 import { motion } from "framer-motion";
 import { Play, Sparkles, Heart, Music2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
 
 export const HeroSection = () => {
+  const [userCountDisplay, setUserCountDisplay] = useState<string>("—");
+  useEffect(() => {
+    const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || "http://localhost:5000";
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/user-count`);
+        const data = await res.json();
+        const count = Number(data?.count || 0);
+        const display = count > 100 ? `${Math.floor(count / 100) * 100}+` : String(count);
+        setUserCountDisplay(display);
+      } catch {
+        setUserCountDisplay("100+");
+      }
+    };
+    fetchCount();
+  }, []);
   const scrollToSection = (href: string) => {
     const element = document.querySelector(href);
     if (element) {
@@ -118,33 +135,22 @@ export const HeroSection = () => {
             </Button>
           </motion.div>
 
-          {/* Trust Badges */}
+          {/* Trust Badge: dynamic customers count centered */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.5 }}
-            className="mt-16 flex flex-wrap items-center justify-center gap-8 text-muted-foreground"
+            className="mt-16 flex items-center justify-center gap-3 text-muted-foreground"
           >
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full bg-gradient-to-br from-blush to-secondary border-2 border-background"
-                  />
-                ))}
-              </div>
-              <span className="text-sm">500+ Happy Recipients</span>
+            <div className="flex -space-x-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-blush to-secondary border-2 border-background"
+                />
+              ))}
             </div>
-            <div className="h-4 w-px bg-border hidden sm:block" />
-            <div className="flex items-center gap-2">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <span key={i} className="text-gold text-sm">★</span>
-                ))}
-              </div>
-              <span className="text-sm">4.9/5 Rating</span>
-            </div>
+            <span className="text-sm">{userCountDisplay} customers</span>
           </motion.div>
         </div>
       </div>

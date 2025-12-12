@@ -30,6 +30,7 @@ There's no one else but you`;
 interface RomanticEveningPreviewProps {
   onClose: () => void;
   onSelect: () => void;
+  variant?: "modal" | "page";
 }
 
 const samplePhotos = [
@@ -81,7 +82,7 @@ const FloatingHeart = ({ delay, startX }: { delay: number; startX: number }) => 
   </motion.div>
 );
 
-export const RomanticEveningPreview = ({ onClose, onSelect }: RomanticEveningPreviewProps) => {
+export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }: RomanticEveningPreviewProps) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -104,21 +105,22 @@ export const RomanticEveningPreview = ({ onClose, onSelect }: RomanticEveningPre
     };
   }, [isPlaying]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-hidden"
-      onClick={onClose}
-    >
+  if (variant === "modal") {
+    return (
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
-        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-hidden"
+        onClick={onClose}
       >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Starry background */}
         {Array.from({ length: 30 }).map((_, i) => (
           <StarParticle
@@ -327,7 +329,153 @@ export const RomanticEveningPreview = ({ onClose, onSelect }: RomanticEveningPre
             Select This Template
           </Button>
         </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    );
+  }
+
+  // Page variant
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <div className="pt-28 pb-8 relative overflow-hidden">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Stars background */}
+          {Array.from({ length: 30 }).map((_, i) => (
+            <StarParticle
+              key={i}
+              delay={i * 0.2}
+              x={Math.random() * 100}
+              y={Math.random() * 100}
+              size={4 + Math.random() * 8}
+            />
+          ))}
+
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-center mb-10"
+          >
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Moon className="w-6 h-6 text-slate-400" />
+              <div className="flex gap-1">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 text-amber-300 fill-amber-300" />
+                ))}
+              </div>
+              <Moon className="w-6 h-6 text-slate-400" />
+            </div>
+            <h1 className="font-display text-4xl md:text-6xl text-white mb-4">Under the Stars</h1>
+            <p className="text-rose-300/80 text-xl">A Valentine's Gift for My Love</p>
+          </motion.div>
+
+          {/* Photo */}
+          <div className="relative mb-10">
+            <div className="relative aspect-video rounded-xl overflow-hidden shadow-2xl" style={{ boxShadow: "0 0 60px rgba(244, 63, 94, 0.2)" }}>
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentPhotoIndex}
+                  src={samplePhotos[currentPhotoIndex]}
+                  alt="Memory"
+                  initial={{ opacity: 0, filter: "brightness(0)" }}
+                  animate={{ opacity: 1, filter: "brightness(1)" }}
+                  exit={{ opacity: 0, filter: "brightness(0)" }}
+                  transition={{ duration: 1.5, ease: "easeInOut" }}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              </AnimatePresence>
+              <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-black to-transparent" />
+              <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
+            </div>
+            <div className="flex justify-center gap-3 mt-6">
+              {samplePhotos.map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPhotoIndex(i)}
+                  className={`transition-all ${i === currentPhotoIndex ? "w-8 h-1 rounded-full bg-rose-400" : "w-1 h-1 rounded-full bg-white/30 hover:bg-white/50"}`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Message */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center mb-10"
+          >
+            <Heart className="w-8 h-8 text-rose-400 fill-rose-400 mx-auto mb-4" />
+            <p className="text-white/80 text-xl italic leading-relaxed max-w-2xl mx-auto">
+              "In the quiet of the night, under a blanket of stars, my heart whispers your name. You are my forever, my always, my everything."
+            </p>
+          </motion.div>
+
+          {/* Music */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-black/40 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
+          >
+            <div className="flex items-center gap-4">
+              <motion.button
+                onClick={() => setIsPlaying(!isPlaying)}
+                className="w-16 h-16 rounded-full bg-gradient-to-br from-rose-500 to-rose-700 flex items-center justify-center text-white shadow-lg"
+                whileHover={{ scale: 1.05, boxShadow: "0 0 30px rgba(244, 63, 94, 0.5)" }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1" />}
+              </motion.button>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Music className="w-4 h-4 text-rose-400" />
+                    <span className="text-white font-medium">Our Love Song</span>
+                  </div>
+                  <button
+                    onClick={() => setShowLyrics(!showLyrics)}
+                    className="flex items-center gap-1 text-xs text-rose-300 hover:text-rose-200 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" />
+                    {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                  </button>
+                </div>
+                <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                  <motion.div className="h-full bg-gradient-to-r from-rose-500 to-rose-400" style={{ width: `${progress}%` }} />
+                </div>
+                <div className="flex justify-between text-xs text-white/50 mt-2">
+                  <span>{Math.floor(progress * 4 / 100)}:{String(Math.floor((progress * 4) % 60)).padStart(2, '0')}</span>
+                  <span>4:00</span>
+                </div>
+              </div>
+            </div>
+            <AnimatePresence>
+              {showLyrics && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">{sampleLyrics}</pre>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+
+          {/* Footer */}
+          <div className="flex justify-center gap-4 mt-8">
+            <Button variant="outline" onClick={onClose} className="border-white/20 text-white hover:bg-white/10 bg-transparent">Close</Button>
+            <Button onClick={onSelect} className="bg-gradient-to-r from-rose-500 to-rose-700 text-white hover:opacity-90">Select This Template</Button>
+          </div>
+        </div>
+
+        {/* Floating hearts */}
+        <FloatingHeart delay={0} startX={10} />
+        <FloatingHeart delay={2} startX={30} />
+        <FloatingHeart delay={4} startX={70} />
+        <FloatingHeart delay={6} startX={90} />
+      </div>
+    </div>
   );
 };

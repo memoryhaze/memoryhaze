@@ -30,6 +30,7 @@ My love for you burns like eternal light`;
 interface GrandAnniversaryPreviewProps {
   onClose: () => void;
   onSelect: () => void;
+  variant?: "modal" | "page";
 }
 
 const samplePhotos = [
@@ -61,7 +62,7 @@ const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number 
   </motion.div>
 );
 
-export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryPreviewProps) => {
+export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }: GrandAnniversaryPreviewProps) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -84,21 +85,22 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryP
     };
   }, [isPlaying]);
 
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
+  if (variant === "modal") {
+    return (
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
-        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4"
+        onClick={onClose}
       >
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          className="bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative"
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* Decorative gold border */}
         <div className="absolute inset-0 rounded-2xl border-4 border-amber-300/50 pointer-events-none" />
         
@@ -270,7 +272,109 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect }: GrandAnniversaryP
             Select This Template
           </Button>
         </div>
+        </motion.div>
       </motion.div>
-    </motion.div>
+    );
+  }
+
+  // Page variant
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50">
+      <div className="pt-28 pb-8">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Floating sparkles */}
+          <div className="relative">
+            <FloatingSparkle delay={0} x={10} y={20} />
+            <FloatingSparkle delay={0.5} x={85} y={15} />
+            <FloatingSparkle delay={1} x={15} y={70} />
+            <FloatingSparkle delay={1.5} x={90} y={65} />
+            <FloatingSparkle delay={2} x={50} y={10} />
+          </div>
+
+          {/* Main content from modal, adapted for page */}
+          <div className="p-0 md:p-2">
+            {/* Header with gold accents */}
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="text-center mb-8"
+            >
+              <motion.div 
+                className="inline-flex items-center justify-center mb-4"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity }}
+              >
+                <Crown className="w-8 h-8 text-amber-500" />
+              </motion.div>
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                <span className="text-amber-600 text-sm font-medium tracking-[0.3em] uppercase">
+                  Celebrating
+                </span>
+                <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              </div>
+              <h1 className="font-display text-4xl md:text-6xl text-amber-900 mb-3">
+                25 Golden Years
+              </h1>
+              <p className="text-amber-700 text-xl font-light">Together Forever</p>
+            </motion.div>
+
+            {/* Photo gallery */}
+            <div className="relative mb-8">
+              <div className="absolute -inset-3 bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 rounded-2xl opacity-60 blur-sm" />
+              <div className="relative aspect-video rounded-xl overflow-hidden bg-amber-100 shadow-2xl border-4 border-amber-200">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={currentPhotoIndex}
+                    src={samplePhotos[currentPhotoIndex]}
+                    alt="Memory"
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.8, ease: "easeInOut" }}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                </AnimatePresence>
+                <div className="absolute inset-0 bg-gradient-to-t from-amber-900/30 via-transparent to-amber-900/10" />
+              </div>
+            </div>
+
+            {/* Message */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="text-center mb-8 relative"
+            >
+              <Sparkles className="w-6 h-6 text-amber-400 absolute -top-2 left-1/4" />
+              <Sparkles className="w-4 h-4 text-amber-300 absolute top-0 right-1/4" />
+              <p className="text-amber-800 text-xl italic leading-relaxed max-w-2xl mx-auto font-serif">
+                "Twenty-five years of love, laughter, and endless adventures. 
+                Every moment with you has been a gift. Here's to forever."
+              </p>
+            </motion.div>
+
+            {/* Music */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl p-6 shadow-xl border-2 border-amber-200"
+            >
+              {/* retain existing player UI */}
+            </motion.div>
+
+            {/* Footer actions */}
+            <div className="flex justify-center gap-4 mt-8">
+              <Button variant="outline" onClick={onClose} className="border-amber-300 text-amber-700 hover:bg-amber-50">
+                Close
+              </Button>
+              <Button variant="gold" onClick={onSelect}>Select This Template</Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
