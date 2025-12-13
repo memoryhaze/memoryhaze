@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Gift, Play, Pause, X, Music, PartyPopper, Cake, Sparkles, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,11 @@ interface BirthdayCelebrationPreviewProps {
   onClose: () => void;
   onSelect: () => void;
   variant?: "modal" | "page";
+  giftData?: {
+    photos?: string[];
+    lyrics?: string;
+    audioUrl?: string | null;
+  };
 }
 
 const samplePhotos = [
@@ -97,7 +102,11 @@ const Balloon = ({ delay, x, color }: { delay: number; x: number; color: string 
   </motion.div>
 );
 
-export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal" }: BirthdayCelebrationPreviewProps) => {
+export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal", giftData }: BirthdayCelebrationPreviewProps) => {
+  const effectivePhotos = giftData?.photos && giftData.photos.length ? giftData.photos : samplePhotos;
+  const effectiveLyrics = typeof giftData?.lyrics === 'string' && giftData.lyrics.trim().length ? giftData.lyrics : sampleLyrics;
+  const audioUrl = giftData?.audioUrl || null;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -107,18 +116,59 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
     if (!isPlaying) return;
 
     const photoInterval = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % samplePhotos.length);
+      setCurrentPhotoIndex((prev) => (prev + 1) % effectivePhotos.length);
     }, 3000);
 
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-    }, 100);
+    // If we have a real audio URL, progress is driven by timeupdate.
+    // Otherwise keep a simple simulated progress.
+    const progressInterval = !audioUrl
+      ? setInterval(() => {
+          setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
+        }, 100)
+      : null;
 
     return () => {
       clearInterval(photoInterval);
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isPlaying]);
+  }, [audioUrl, isPlaying, effectivePhotos.length]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    const handleTimeUpdate = () => {
+      const duration = el.duration || 0;
+      const pct = duration ? (el.currentTime / duration) * 100 : 0;
+      setProgress(Number.isFinite(pct) ? pct : 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    el.addEventListener('timeupdate', handleTimeUpdate);
+    el.addEventListener('ended', handleEnded);
+    return () => {
+      el.removeEventListener('timeupdate', handleTimeUpdate);
+      el.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    if (isPlaying) {
+      const p = el.play();
+      if (p && typeof (p as any).catch === 'function') {
+        (p as any).catch(() => setIsPlaying(false));
+      }
+    } else {
+      el.pause();
+    }
+  }, [audioUrl, isPlaying]);
 
   if (variant === "modal") {
     return (
@@ -205,7 +255,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentPhotoIndex}
-                  src={samplePhotos[currentPhotoIndex]}
+                  src={effectivePhotos[currentPhotoIndex]}
                   alt="Memory"
                   initial={{ opacity: 0, scale: 1.2, rotate: 5 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -237,7 +287,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
 
             {/* Photo dots */}
             <div className="flex justify-center gap-2 mt-4">
-              {samplePhotos.map((_, i) => (
+              {effectivePhotos.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPhotoIndex(i)}
@@ -271,6 +321,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
             transition={{ delay: 0.5 }}
             className="bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 rounded-2xl p-6 shadow-xl"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <motion.button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -320,7 +371,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
                 >
                   <div className="mt-4 pt-4 border-t border-purple-300/50">
                     <pre className="text-sm text-purple-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
+                      {effectiveLyrics}
                     </pre>
                   </div>
                 </motion.div>
@@ -381,7 +432,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentPhotoIndex}
-                  src={samplePhotos[currentPhotoIndex]}
+                  src={effectivePhotos[currentPhotoIndex]}
                   alt="Memory"
                   initial={{ opacity: 0, scale: 1.2, rotate: 5 }}
                   animate={{ opacity: 1, scale: 1, rotate: 0 }}
@@ -393,7 +444,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
               <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 to-transparent" />
             </div>
             <div className="flex justify-center gap-2 mt-4">
-              {samplePhotos.map((_, i) => (
+              {effectivePhotos.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPhotoIndex(i)}
@@ -427,6 +478,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
             transition={{ delay: 0.3 }}
             className="bg-gradient-to-r from-purple-200 via-pink-200 to-indigo-200 rounded-2xl p-6 shadow-xl"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <motion.button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -473,7 +525,7 @@ export const BirthdayCelebrationPreview = ({ onClose, onSelect, variant = "modal
                 >
                   <div className="mt-4 pt-4 border-t border-purple-300/50">
                     <pre className="text-sm text-purple-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
+                      {effectiveLyrics}
                     </pre>
                   </div>
                 </motion.div>

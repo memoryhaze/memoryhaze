@@ -66,6 +66,9 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
     videos: [] as File[],
   });
 
+  // Prevent selecting past dates for occasion
+  const todayISO = new Date().toISOString().split("T")[0];
+
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
@@ -285,6 +288,7 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
                       <Input
                         id="occasionDate"
                         type="date"
+                        min={todayISO}
                         value={formData.occasionDate}
                         onChange={(e) => handleInputChange("occasionDate", e.target.value)}
                       />

@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Heart, Play, Pause, X, Music, Volume2, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,11 @@ interface MinimalistLovePreviewProps {
   onClose: () => void;
   onSelect: () => void;
   variant?: "modal" | "page";
+  giftData?: {
+    photos?: string[];
+    lyrics?: string;
+    audioUrl?: string | null;
+  };
 }
 
 const samplePhotos = [
@@ -41,7 +46,11 @@ const samplePhotos = [
   "https://images.unsplash.com/photo-1544078751-58fee2d8a03b?w=600&h=400&fit=crop",
 ];
 
-export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: MinimalistLovePreviewProps) => {
+export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal", giftData }: MinimalistLovePreviewProps) => {
+  const effectivePhotos = giftData?.photos && giftData.photos.length ? giftData.photos : samplePhotos;
+  const effectiveLyrics = typeof giftData?.lyrics === 'string' && giftData.lyrics.trim().length ? giftData.lyrics : sampleLyrics;
+  const audioUrl = giftData?.audioUrl || null;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -51,18 +60,57 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
     if (!isPlaying) return;
 
     const photoInterval = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % samplePhotos.length);
+      setCurrentPhotoIndex((prev) => (prev + 1) % effectivePhotos.length);
     }, 4000);
 
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-    }, 100);
+    const progressInterval = !audioUrl
+      ? setInterval(() => {
+          setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
+        }, 100)
+      : null;
 
     return () => {
       clearInterval(photoInterval);
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isPlaying]);
+  }, [audioUrl, isPlaying, effectivePhotos.length]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    const handleTimeUpdate = () => {
+      const duration = el.duration || 0;
+      const pct = duration ? (el.currentTime / duration) * 100 : 0;
+      setProgress(Number.isFinite(pct) ? pct : 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    el.addEventListener('timeupdate', handleTimeUpdate);
+    el.addEventListener('ended', handleEnded);
+    return () => {
+      el.removeEventListener('timeupdate', handleTimeUpdate);
+      el.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    if (isPlaying) {
+      const p = el.play();
+      if (p && typeof (p as any).catch === 'function') {
+        (p as any).catch(() => setIsPlaying(false));
+      }
+    } else {
+      el.pause();
+    }
+  }, [audioUrl, isPlaying]);
 
   if (variant === "modal") {
     return (
@@ -115,7 +163,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
             <AnimatePresence mode="wait">
               <motion.img
                 key={currentPhotoIndex}
-                src={samplePhotos[currentPhotoIndex]}
+                src={effectivePhotos[currentPhotoIndex]}
                 alt="Memory"
                 initial={{ opacity: 0, scale: 1.1 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -130,7 +178,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
 
             {/* Photo counter */}
             <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-sm text-gray-600">
-              {currentPhotoIndex + 1} / {samplePhotos.length}
+              {currentPhotoIndex + 1} / {effectivePhotos.length}
             </div>
           </div>
 
@@ -154,6 +202,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
             transition={{ delay: 0.5 }}
             className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -203,7 +252,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
                 >
                   <div className="mt-4 pt-4 border-t border-rose-100">
                     <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
+                      {effectiveLyrics}
                     </pre>
                   </div>
                 </motion.div>
@@ -256,7 +305,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
             <AnimatePresence mode="wait">
               <motion.img
                 key={currentPhotoIndex}
-                src={samplePhotos[currentPhotoIndex]}
+                src={effectivePhotos[currentPhotoIndex]}
                 alt="Memory"
                 initial={{ opacity: 0, scale: 1.1 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -267,7 +316,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
             </AnimatePresence>
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             <div className="absolute bottom-4 right-4 bg-white/80 backdrop-blur px-3 py-1 rounded-full text-sm text-gray-600">
-              {currentPhotoIndex + 1} / {samplePhotos.length}
+              {currentPhotoIndex + 1} / {effectivePhotos.length}
             </div>
           </div>
 
@@ -291,6 +340,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
             transition={{ delay: 0.3 }}
             className="bg-white rounded-2xl p-6 shadow-lg border border-rose-100"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -336,7 +386,7 @@ export const MinimalistLovePreview = ({ onClose, onSelect, variant = "modal" }: 
                 >
                   <div className="mt-4 pt-4 border-top border-rose-100">
                     <pre className="text-sm text-gray-600 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
+                      {effectiveLyrics}
                     </pre>
                   </div>
                 </motion.div>

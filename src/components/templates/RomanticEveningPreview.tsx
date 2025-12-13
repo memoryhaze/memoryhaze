@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Star, Play, Pause, X, Music, Heart, Moon, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,11 @@ interface RomanticEveningPreviewProps {
   onClose: () => void;
   onSelect: () => void;
   variant?: "modal" | "page";
+  giftData?: {
+    photos?: string[];
+    lyrics?: string;
+    audioUrl?: string | null;
+  };
 }
 
 const samplePhotos = [
@@ -82,7 +87,11 @@ const FloatingHeart = ({ delay, startX }: { delay: number; startX: number }) => 
   </motion.div>
 );
 
-export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }: RomanticEveningPreviewProps) => {
+export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal", giftData }: RomanticEveningPreviewProps) => {
+  const effectivePhotos = giftData?.photos && giftData.photos.length ? giftData.photos : samplePhotos;
+  const effectiveLyrics = typeof giftData?.lyrics === 'string' && giftData.lyrics.trim().length ? giftData.lyrics : sampleLyrics;
+  const audioUrl = giftData?.audioUrl || null;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -92,18 +101,57 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
     if (!isPlaying) return;
 
     const photoInterval = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % samplePhotos.length);
+      setCurrentPhotoIndex((prev) => (prev + 1) % effectivePhotos.length);
     }, 5000);
 
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 0.4));
-    }, 100);
+    const progressInterval = !audioUrl
+      ? setInterval(() => {
+          setProgress((prev) => (prev >= 100 ? 0 : prev + 0.4));
+        }, 100)
+      : null;
 
     return () => {
       clearInterval(photoInterval);
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isPlaying]);
+  }, [audioUrl, isPlaying, effectivePhotos.length]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    const handleTimeUpdate = () => {
+      const duration = el.duration || 0;
+      const pct = duration ? (el.currentTime / duration) * 100 : 0;
+      setProgress(Number.isFinite(pct) ? pct : 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    el.addEventListener('timeupdate', handleTimeUpdate);
+    el.addEventListener('ended', handleEnded);
+    return () => {
+      el.removeEventListener('timeupdate', handleTimeUpdate);
+      el.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    if (isPlaying) {
+      const p = el.play();
+      if (p && typeof (p as any).catch === 'function') {
+        (p as any).catch(() => setIsPlaying(false));
+      }
+    } else {
+      el.pause();
+    }
+  }, [audioUrl, isPlaying]);
 
   if (variant === "modal") {
     return (
@@ -199,7 +247,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentPhotoIndex}
-                  src={samplePhotos[currentPhotoIndex]}
+                  src={effectivePhotos[currentPhotoIndex]}
                   alt="Memory"
                   initial={{ opacity: 0, filter: "brightness(0)" }}
                   animate={{ opacity: 1, filter: "brightness(1)" }}
@@ -219,7 +267,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
 
             {/* Navigation dots */}
             <div className="flex justify-center gap-3 mt-6">
-              {samplePhotos.map((_, i) => (
+              {effectivePhotos.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPhotoIndex(i)}
@@ -255,6 +303,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
             transition={{ delay: 0.5 }}
             className="bg-black/40 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <motion.button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -303,9 +352,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
                   className="overflow-hidden"
                 >
                   <div className="mt-4 pt-4 border-t border-white/10">
-                    <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
-                    </pre>
+                    <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">{effectiveLyrics}</pre>
                   </div>
                 </motion.div>
               )}
@@ -376,7 +423,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentPhotoIndex}
-                  src={samplePhotos[currentPhotoIndex]}
+                  src={effectivePhotos[currentPhotoIndex]}
                   alt="Memory"
                   initial={{ opacity: 0, filter: "brightness(0)" }}
                   animate={{ opacity: 1, filter: "brightness(1)" }}
@@ -390,7 +437,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
               <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(0,0,0,0.8)]" />
             </div>
             <div className="flex justify-center gap-3 mt-6">
-              {samplePhotos.map((_, i) => (
+              {effectivePhotos.map((_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPhotoIndex(i)}
@@ -420,6 +467,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
             transition={{ delay: 0.3 }}
             className="bg-black/40 backdrop-blur-sm rounded-2xl p-6 border border-white/10"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <motion.button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -456,7 +504,7 @@ export const RomanticEveningPreview = ({ onClose, onSelect, variant = "modal" }:
               {showLyrics && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="overflow-hidden">
                   <div className="mt-4 pt-4 border-t border-white/10">
-                    <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">{sampleLyrics}</pre>
+                    <pre className="text-sm text-white/70 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">{effectiveLyrics}</pre>
                   </div>
                 </motion.div>
               )}

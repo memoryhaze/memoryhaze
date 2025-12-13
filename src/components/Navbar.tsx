@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Music, Heart, User, LogOut, ChevronDown } from "lucide-react";
+import { Menu, X, Music, Heart, User, LogOut, ChevronDown, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { isAuthenticated, logout } from "@/lib/authUtils";
 import { toast } from "sonner";
@@ -174,6 +174,14 @@ export const Navbar = ({ hideMarketingLinks = false, logoAsLinkTo = "#" }: Navba
                           Dashboard
                         </Link>
                       )}
+                      <Link
+                        to="/gifts"
+                        className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        <Gift className="w-4 h-4" />
+                        My Gifts
+                      </Link>
                       <button
                         onClick={handleLogout}
                         className="w-full px-3 py-2 text-left text-sm hover:bg-muted/50 transition-colors flex items-center gap-2"
@@ -241,6 +249,11 @@ export const Navbar = ({ hideMarketingLinks = false, logoAsLinkTo = "#" }: Navba
                       </Button>
                     </Link>
                   )}
+                  <Link to="/gifts" className="block" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" className="w-full">
+                      My Gifts
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     className="w-full"

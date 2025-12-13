@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Sparkles, Play, Pause, X, Music, Crown, Star, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +31,11 @@ interface GrandAnniversaryPreviewProps {
   onClose: () => void;
   onSelect: () => void;
   variant?: "modal" | "page";
+  giftData?: {
+    photos?: string[];
+    lyrics?: string;
+    audioUrl?: string | null;
+  };
 }
 
 const samplePhotos = [
@@ -62,7 +67,11 @@ const FloatingSparkle = ({ delay, x, y }: { delay: number; x: number; y: number 
   </motion.div>
 );
 
-export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }: GrandAnniversaryPreviewProps) => {
+export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal", giftData }: GrandAnniversaryPreviewProps) => {
+  const effectivePhotos = giftData?.photos && giftData.photos.length ? giftData.photos : samplePhotos;
+  const effectiveLyrics = typeof giftData?.lyrics === 'string' && giftData.lyrics.trim().length ? giftData.lyrics : sampleLyrics;
+  const audioUrl = giftData?.audioUrl || null;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
@@ -72,18 +81,57 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
     if (!isPlaying) return;
 
     const photoInterval = setInterval(() => {
-      setCurrentPhotoIndex((prev) => (prev + 1) % samplePhotos.length);
+      setCurrentPhotoIndex((prev) => (prev + 1) % effectivePhotos.length);
     }, 3500);
 
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
-    }, 100);
+    const progressInterval = !audioUrl
+      ? setInterval(() => {
+          setProgress((prev) => (prev >= 100 ? 0 : prev + 0.5));
+        }, 100)
+      : null;
 
     return () => {
       clearInterval(photoInterval);
-      clearInterval(progressInterval);
+      if (progressInterval) clearInterval(progressInterval);
     };
-  }, [isPlaying]);
+  }, [audioUrl, isPlaying, effectivePhotos.length]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    const handleTimeUpdate = () => {
+      const duration = el.duration || 0;
+      const pct = duration ? (el.currentTime / duration) * 100 : 0;
+      setProgress(Number.isFinite(pct) ? pct : 0);
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setProgress(0);
+    };
+
+    el.addEventListener('timeupdate', handleTimeUpdate);
+    el.addEventListener('ended', handleEnded);
+    return () => {
+      el.removeEventListener('timeupdate', handleTimeUpdate);
+      el.removeEventListener('ended', handleEnded);
+    };
+  }, [audioUrl]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el || !audioUrl) return;
+
+    if (isPlaying) {
+      const p = el.play();
+      if (p && typeof (p as any).catch === 'function') {
+        (p as any).catch(() => setIsPlaying(false));
+      }
+    } else {
+      el.pause();
+    }
+  }, [audioUrl, isPlaying]);
 
   if (variant === "modal") {
     return (
@@ -155,7 +203,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
               <AnimatePresence mode="wait">
                 <motion.img
                   key={currentPhotoIndex}
-                  src={samplePhotos[currentPhotoIndex]}
+                  src={effectivePhotos[currentPhotoIndex]}
                   alt="Memory"
                   initial={{ opacity: 0, x: 100 }}
                   animate={{ opacity: 1, x: 0 }}
@@ -170,7 +218,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
 
               {/* Photo indicators */}
               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {samplePhotos.map((_, i) => (
+                {effectivePhotos.map((_, i) => (
                   <button
                     key={i}
                     onClick={() => setCurrentPhotoIndex(i)}
@@ -207,6 +255,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
             transition={{ delay: 0.5 }}
             className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl p-6 shadow-xl border-2 border-amber-200"
           >
+            {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
             <div className="flex items-center gap-4">
               <button
                 onClick={() => setIsPlaying(!isPlaying)}
@@ -254,7 +303,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
                 >
                   <div className="mt-4 pt-4 border-t border-amber-200">
                     <pre className="text-sm text-amber-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">
-                      {sampleLyrics}
+                      {effectiveLyrics}
                     </pre>
                   </div>
                 </motion.div>
@@ -327,7 +376,7 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={currentPhotoIndex}
-                    src={samplePhotos[currentPhotoIndex]}
+                    src={effectivePhotos[currentPhotoIndex]}
                     alt="Memory"
                     initial={{ opacity: 0, x: 100 }}
                     animate={{ opacity: 1, x: 0 }}
@@ -362,7 +411,53 @@ export const GrandAnniversaryPreview = ({ onClose, onSelect, variant = "modal" }
               transition={{ delay: 0.3 }}
               className="bg-gradient-to-r from-amber-100 to-yellow-100 rounded-2xl p-6 shadow-xl border-2 border-amber-200"
             >
-              {/* retain existing player UI */}
+              {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" />}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsPlaying(!isPlaying)}
+                  className="w-16 h-16 rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                >
+                  {isPlaying ? <Pause className="w-7 h-7" /> : <Play className="w-7 h-7 ml-1" />}
+                </button>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Music className="w-4 h-4 text-amber-600" />
+                      <span className="text-amber-900 font-semibold">Our Golden Love Song</span>
+                    </div>
+                    <button
+                      onClick={() => setShowLyrics(!showLyrics)}
+                      className="flex items-center gap-1 text-xs text-amber-700 hover:text-amber-800 transition-colors"
+                    >
+                      <FileText className="w-4 h-4" />
+                      {showLyrics ? "Hide Lyrics" : "View Lyrics"}
+                    </button>
+                  </div>
+                  <div className="h-3 bg-amber-200 rounded-full overflow-hidden">
+                    <motion.div className="h-full bg-gradient-to-r from-amber-400 to-yellow-500" style={{ width: `${progress}%` }} />
+                  </div>
+                  <div className="flex justify-between text-xs text-amber-600 mt-1">
+                    <span>{Math.floor(progress * 3 / 100)}:{String(Math.floor((progress * 3) % 60)).padStart(2, '0')}</span>
+                    <span>3:00</span>
+                  </div>
+                </div>
+              </div>
+
+              <AnimatePresence>
+                {showLyrics && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="mt-4 pt-4 border-t border-amber-200">
+                      <pre className="text-sm text-amber-800 whitespace-pre-wrap font-sans leading-relaxed max-h-48 overflow-y-auto">{effectiveLyrics}</pre>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
             {/* Footer actions */}

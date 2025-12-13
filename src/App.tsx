@@ -13,6 +13,8 @@ import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import Memories from "./pages/Memories";
 import MemoriesViewer from "./pages/MemoriesViewer";
+import Gifts from "./pages/Gifts";
+import GiftViewer from "./pages/GiftViewer";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +32,8 @@ const App = () => (
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/memories" element={<Memories />} />
             <Route path="/memories/:templateId" element={<MemoriesViewer />} />
+            <Route path="/gifts" element={<Gifts />} />
+            <Route path="/gifts/:giftId" element={<GiftViewer />} />
             <Route
               path="/admin"
               element={
