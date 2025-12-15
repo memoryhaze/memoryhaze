@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ArrowLeft, Search, Loader2, ChevronLeft, ChevronRight, Eye, EyeOff, PlusCircle, Trash2, RefreshCw } from "lucide-react";
+import { ArrowLeft, Search, Loader2, ChevronLeft, ChevronRight, Eye, EyeOff, PlusCircle, Trash2, RefreshCw, Music, Image, FileText, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
@@ -543,15 +544,31 @@ const AdminDashboard = () => {
                                                         <PlusCircle className="w-5 h-5 text-primary" />
                                                     </button>
                                                 </DialogTrigger>
-                                                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="w-[98vw] sm:w-auto max-w-5xl max-h-[90vh] overflow-y-auto">
-                                                    <DialogHeader>
-                                                        <DialogTitle className="text-xl">Create for {user.email}</DialogTitle>
+                                                <DialogContent onOpenAutoFocus={(e) => e.preventDefault()} className="w-[95vw] sm:w-[600px] md:w-[700px] max-w-[700px] max-h-[90vh] overflow-y-auto rounded-2xl border border-border/50 bg-card shadow-xl p-0">
+                                                    <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/30 bg-muted/20">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blush/30 to-gold/20 flex items-center justify-center">
+                                                                <PlusCircle className="w-5 h-5 text-blush-deep" />
+                                                            </div>
+                                                            <div>
+                                                                <DialogTitle className="font-display text-xl font-semibold text-foreground">Create Gift</DialogTitle>
+                                                                <p className="text-sm text-muted-foreground mt-0.5">for {user.email}</p>
+                                                            </div>
+                                                        </div>
                                                     </DialogHeader>
-                                                    <div className="space-y-6 text-foreground">
-                                                        <div>
-                                                            <label className="text-sm font-semibold">Upload Photos</label>
-                                                            <label htmlFor={`photo-upload-${user._id}`} className="mt-2 w-full h-40 rounded-xl border-2 border-dashed border-border bg-white hover:bg-muted/30 transition-colors cursor-pointer flex items-center justify-center text-base text-muted-foreground">
-                                                                Click to select up to 4 images
+                                                    <div className="space-y-6 text-foreground px-6 py-6">
+                                                        {/* Photos Upload */}
+                                                        <div className="space-y-3">
+                                                            <Label className="text-sm font-semibold flex items-center gap-2">
+                                                                <Image className="w-4 h-4 text-blush-deep" />
+                                                                Upload Photos
+                                                            </Label>
+                                                            <label
+                                                                htmlFor={`photo-upload-${user._id}`}
+                                                                className="flex flex-col items-center justify-center w-full h-28 rounded-xl border-2 border-dashed border-border/70 bg-muted/20 hover:bg-muted/40 hover:border-blush/50 transition-all cursor-pointer group"
+                                                            >
+                                                                <Upload className="w-7 h-7 text-muted-foreground group-hover:text-blush-deep transition-colors mb-2" />
+                                                                <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Click to select up to 4 images</span>
                                                             </label>
                                                             <input
                                                                 id={`photo-upload-${user._id}`}
@@ -561,11 +578,10 @@ const AdminDashboard = () => {
                                                                 className="hidden"
                                                                 onChange={(e) => handlePhotosChange(user._id, e.target.files)}
                                                             />
-                                                            <p className="mt-2 text-xs text-muted-foreground">Up to 4 photos</p>
                                                             {(userPhotos[user._id] || []).length > 0 && (
-                                                                <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                                                <div className="grid grid-cols-4 gap-3 mt-2">
                                                                     {(userPhotos[user._id] || []).map((file, idx) => (
-                                                                        <div key={idx} className="relative group w-full aspect-square rounded-xl overflow-hidden bg-muted border border-border">
+                                                                        <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden shadow-sm border border-border/50 bg-muted">
                                                                             <img
                                                                                 src={URL.createObjectURL(file)}
                                                                                 alt={`Photo ${idx + 1}`}
@@ -574,20 +590,46 @@ const AdminDashboard = () => {
                                                                             <button
                                                                                 type="button"
                                                                                 onClick={() => removePhotoAt(user._id, idx)}
-                                                                                className="absolute top-1 right-1 text-xs bg-foreground/80 text-primary-foreground rounded px-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center bg-foreground/80 text-primary-foreground rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive"
                                                                                 aria-label="Remove photo"
                                                                             >
-                                                                                ×
+                                                                                <Trash2 className="w-3 h-3" />
                                                                             </button>
                                                                         </div>
                                                                     ))}
                                                                 </div>
                                                             )}
                                                         </div>
-                                                        <div>
-                                                            <label className="text-sm font-semibold">Upload Audio</label>
-                                                            <label htmlFor={`audio-upload-${user._id}`} className="mt-2 w-full h-28 rounded-xl border-2 border-dashed border-border bg-white hover:bg-muted/30 transition-colors cursor-pointer flex items-center justify-center text-base text-muted-foreground">
-                                                                Click to select an audio file
+
+                                                        {/* Audio Upload */}
+                                                        <div className="space-y-3">
+                                                            <Label className="text-sm font-semibold flex items-center gap-2">
+                                                                <Music className="w-4 h-4 text-blush-deep" />
+                                                                Upload Audio
+                                                            </Label>
+                                                            <label
+                                                                htmlFor={`audio-upload-${user._id}`}
+                                                                className={`flex items-center justify-center w-full h-20 rounded-xl border-2 border-dashed transition-all cursor-pointer group ${userAudio[user._id]
+                                                                    ? 'border-gold/50 bg-gold/5 hover:bg-gold/10'
+                                                                    : 'border-border/70 bg-muted/20 hover:bg-muted/40 hover:border-blush/50'
+                                                                    }`}
+                                                            >
+                                                                {userAudio[user._id] ? (
+                                                                    <div className="flex items-center gap-3">
+                                                                        <div className="w-10 h-10 rounded-full bg-gold/20 flex items-center justify-center">
+                                                                            <Music className="w-5 h-5 text-gold" />
+                                                                        </div>
+                                                                        <div className="text-left">
+                                                                            <p className="text-sm font-medium text-foreground truncate max-w-[280px]">{userAudio[user._id]?.name}</p>
+                                                                            <p className="text-xs text-muted-foreground">Click to change audio file</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : (
+                                                                    <div className="flex flex-col items-center">
+                                                                        <Upload className="w-6 h-6 text-muted-foreground group-hover:text-blush-deep transition-colors mb-1" />
+                                                                        <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">Click to select an audio file</span>
+                                                                    </div>
+                                                                )}
                                                             </label>
                                                             <input
                                                                 id={`audio-upload-${user._id}`}
@@ -600,13 +642,16 @@ const AdminDashboard = () => {
                                                                 }}
                                                             />
                                                         </div>
-                                                        <div className="grid md:grid-cols-2 gap-5">
-                                                            <div>
-                                                                <label className="text-sm font-semibold">Occasion</label>
+
+                                                        {/* Occasion & Plan */}
+                                                        <div className="grid sm:grid-cols-2 gap-4">
+                                                            <div className="space-y-2">
+                                                                <Label className="text-sm font-semibold">Occasion *</Label>
                                                                 <select
-                                                                    className="mt-2 w-full h-11 rounded-lg border border-border bg-white px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
+                                                                    className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all appearance-none cursor-pointer hover:bg-muted/40"
                                                                     value={userMemoryType[user._id] || ''}
                                                                     onChange={(e) => setUserMemoryType((prev) => ({ ...prev, [user._id]: e.target.value }))}
+                                                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                                                                 >
                                                                     <option value="" disabled>Select occasion</option>
                                                                     <option value="birthday">Birthday</option>
@@ -614,12 +659,13 @@ const AdminDashboard = () => {
                                                                     <option value="valentines">Valentine's Day</option>
                                                                 </select>
                                                             </div>
-                                                            <div>
-                                                                <label className="text-sm font-semibold">Plan</label>
+                                                            <div className="space-y-2">
+                                                                <Label className="text-sm font-semibold">Plan *</Label>
                                                                 <select
-                                                                    className="mt-2 w-full h-11 rounded-lg border border-border bg-white px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
+                                                                    className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all appearance-none cursor-pointer hover:bg-muted/40"
                                                                     value={userPlan[user._id] || ''}
                                                                     onChange={(e) => setUserPlan((prev) => ({ ...prev, [user._id]: e.target.value }))}
+                                                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
                                                                 >
                                                                     <option value="" disabled>Select plan</option>
                                                                     <option value="momentum">Momentum</option>
@@ -627,14 +673,19 @@ const AdminDashboard = () => {
                                                                 </select>
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <label className="text-sm font-semibold">Scenarios</label>
-                                                            <div className="mt-2 space-y-4">
+
+                                                        {/* Scenarios */}
+                                                        <div className="space-y-3">
+                                                            <Label className="text-sm font-semibold flex items-center gap-2">
+                                                                <FileText className="w-4 h-4 text-blush-deep" />
+                                                                Scenarios
+                                                            </Label>
+                                                            <div className="space-y-3">
                                                                 {([0, 1, 2] as const).map((idx) => (
                                                                     <textarea
                                                                         key={idx}
-                                                                        className="w-full min-h-[180px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-                                                                        placeholder={`Scenario ${idx + 1}`}
+                                                                        className="w-full min-h-[120px] rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all resize-none placeholder:text-muted-foreground/60 hover:bg-muted/30"
+                                                                        placeholder={`Describe scenario ${idx + 1}...`}
                                                                         value={(userScenarios[user._id]?.[idx]) || ''}
                                                                         onChange={(e) => setUserScenarios((prev) => {
                                                                             const current = prev[user._id] || ['', '', ''];
@@ -646,31 +697,40 @@ const AdminDashboard = () => {
                                                                 ))}
                                                             </div>
                                                         </div>
-                                                        <div>
-                                                            <label className="text-sm font-semibold">Lyrics</label>
+
+                                                        {/* Lyrics */}
+                                                        <div className="space-y-3">
+                                                            <Label className="text-sm font-semibold flex items-center gap-2">
+                                                                <Music className="w-4 h-4 text-blush-deep" />
+                                                                Lyrics
+                                                            </Label>
                                                             <textarea
-                                                                className="mt-2 w-full min-h-[180px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                                className="w-full min-h-[140px] rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all resize-none placeholder:text-muted-foreground/60 hover:bg-muted/30"
                                                                 placeholder="Paste or write lyrics here..."
                                                                 value={userLyrics[user._id] || ''}
                                                                 onChange={(e) => setUserLyrics((prev) => ({ ...prev, [user._id]: e.target.value }))}
                                                             />
                                                         </div>
-                                                        <div>
-                                                            <label className="text-sm font-semibold">Message</label>
+
+                                                        {/* Message */}
+                                                        <div className="space-y-3">
+                                                            <Label className="text-sm font-semibold">Message</Label>
                                                             <textarea
-                                                                className="mt-2 w-full min-h-[140px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                                className="w-full min-h-[100px] rounded-xl border border-border/70 bg-muted/20 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all resize-none placeholder:text-muted-foreground/60 hover:bg-muted/30"
                                                                 placeholder="Write a message to the recipient..."
                                                                 value={userMessage[user._id] || ''}
                                                                 onChange={(e) => setUserMessage((prev) => ({ ...prev, [user._id]: e.target.value }))}
                                                             />
                                                         </div>
                                                     </div>
-                                                    <DialogFooter>
+                                                    <DialogFooter className="px-6 py-4 border-t border-border/30 bg-muted/10 gap-3">
                                                         <DialogClose asChild>
-                                                            <Button type="button" variant="outline">Cancel</Button>
+                                                            <Button type="button" variant="outline" className="rounded-xl">Cancel</Button>
                                                         </DialogClose>
                                                         <Button
                                                             type="button"
+                                                            variant="hero"
+                                                            className="rounded-xl"
                                                             disabled={!!isUploading[user._id]}
                                                             onClick={async () => {
                                                                 const cloudName = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD_NAME || (import.meta as any).env?.REACT_APP_CLOUDINARY_CLOUD_NAME;
