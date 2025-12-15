@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ArrowLeft, Search, Loader2, ChevronLeft, ChevronRight, Eye, EyeOff, PlusCircle, Trash2, RefreshCw, Music, Image, FileText, Upload } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -647,30 +648,34 @@ const AdminDashboard = () => {
                                                         <div className="grid sm:grid-cols-2 gap-4">
                                                             <div className="space-y-2">
                                                                 <Label className="text-sm font-semibold">Occasion *</Label>
-                                                                <select
-                                                                    className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all appearance-none cursor-pointer hover:bg-muted/40"
+                                                                <Select
                                                                     value={userMemoryType[user._id] || ''}
-                                                                    onChange={(e) => setUserMemoryType((prev) => ({ ...prev, [user._id]: e.target.value }))}
-                                                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                                                                    onValueChange={(value) => setUserMemoryType((prev) => ({ ...prev, [user._id]: value }))}
                                                                 >
-                                                                    <option value="" disabled>Select occasion</option>
-                                                                    <option value="birthday">Birthday</option>
-                                                                    <option value="anniversary">Anniversary</option>
-                                                                    <option value="valentines">Valentine's Day</option>
-                                                                </select>
+                                                                    <SelectTrigger className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 text-sm focus:ring-2 focus:ring-blush/40 transition-all hover:bg-muted/40">
+                                                                        <SelectValue placeholder="Select occasion" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="birthday">Birthday</SelectItem>
+                                                                        <SelectItem value="anniversary">Anniversary</SelectItem>
+                                                                        <SelectItem value="valentines">Valentine's Day</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
                                                             </div>
                                                             <div className="space-y-2">
                                                                 <Label className="text-sm font-semibold">Plan *</Label>
-                                                                <select
-                                                                    className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blush/40 focus:border-blush/50 transition-all appearance-none cursor-pointer hover:bg-muted/40"
+                                                                <Select
                                                                     value={userPlan[user._id] || ''}
-                                                                    onChange={(e) => setUserPlan((prev) => ({ ...prev, [user._id]: e.target.value }))}
-                                                                    style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center' }}
+                                                                    onValueChange={(value) => setUserPlan((prev) => ({ ...prev, [user._id]: value }))}
                                                                 >
-                                                                    <option value="" disabled>Select plan</option>
-                                                                    <option value="momentum">Momentum</option>
-                                                                    <option value="everlasting">Everlasting</option>
-                                                                </select>
+                                                                    <SelectTrigger className="w-full h-11 rounded-xl border border-border/70 bg-muted/20 px-4 text-sm focus:ring-2 focus:ring-blush/40 transition-all hover:bg-muted/40">
+                                                                        <SelectValue placeholder="Select plan" />
+                                                                    </SelectTrigger>
+                                                                    <SelectContent>
+                                                                        <SelectItem value="momentum">Momentum</SelectItem>
+                                                                        <SelectItem value="everlasting">Everlasting</SelectItem>
+                                                                    </SelectContent>
+                                                                </Select>
                                                             </div>
                                                         </div>
 
@@ -801,14 +806,22 @@ const AdminDashboard = () => {
                                                                     }
 
                                                                     // Step 2: Upload files to Cloudinary with folder structure: MemoryHaze/userId/gift{n}/
-                                                                    const folderPath = `MemoryHaze/${user.userId}/gift${giftNumber}`;
+                                                                    // Use userId if available, otherwise fallback to _id
+                                                                    const userFolder = user.userId || user._id;
+                                                                    if (!userFolder) {
+                                                                        toast.error('User ID missing', { description: 'Cannot create gift without user identifier.' });
+                                                                        setIsUploading((prev) => ({ ...prev, [user._id]: false }));
+                                                                        return;
+                                                                    }
+                                                                    const folderPath = `MemoryHaze/${userFolder}/gift${giftNumber}`;
 
                                                                     const uploadImage = async (file: File, index: number) => {
                                                                         const fd = new FormData();
                                                                         fd.append('file', file);
                                                                         fd.append('upload_preset', imgPreset);
-                                                                        // Include folder path in public_id for reliable folder structure
-                                                                        fd.append('public_id', `${folderPath}/photo_${index + 1}`);
+                                                                        // Use separate folder parameter for proper folder structure
+                                                                        fd.append('folder', folderPath);
+                                                                        fd.append('public_id', `photo_${index + 1}`);
 
                                                                         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                                                                             method: 'POST',
@@ -826,8 +839,9 @@ const AdminDashboard = () => {
                                                                         const fd = new FormData();
                                                                         fd.append('file', file);
                                                                         fd.append('upload_preset', audioPreset);
-                                                                        // Include folder path in public_id for reliable folder structure
-                                                                        fd.append('public_id', `${folderPath}/audio`);
+                                                                        // Use separate folder parameter for proper folder structure
+                                                                        fd.append('folder', folderPath);
+                                                                        fd.append('public_id', 'audio');
 
                                                                         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
                                                                             method: 'POST',
