@@ -36,7 +36,6 @@ const occasions = [
   { value: "birthday", label: "Birthday" },
   { value: "anniversary", label: "Anniversary" },
   { value: "valentines", label: "Valentine's Day" },
-  { value: "other", label: "Other" },
 ];
 
 const genres = [
@@ -82,11 +81,11 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
 
   const handleFileUpload = (type: "photos" | "videos", files: FileList | null) => {
     if (!files) return;
-    
+
     const fileArray = Array.from(files);
     const limit = type === "photos" ? maxPhotos : maxVideos;
     const current = formData[type].length;
-    
+
     if (current + fileArray.length > limit) {
       toast({
         title: "Upload limit reached",
@@ -209,13 +208,12 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
             {steps.map((step, index) => (
               <div key={step.id} className="flex items-center">
                 <div
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${
-                    currentStep === step.id
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${currentStep === step.id
                       ? "bg-primary text-primary-foreground"
                       : currentStep > step.id
-                      ? "bg-gold/20 text-gold"
-                      : "bg-muted text-muted-foreground"
-                  }`}
+                        ? "bg-gold/20 text-gold"
+                        : "bg-muted text-muted-foreground"
+                    }`}
                 >
                   {currentStep > step.id ? (
                     <Check className="w-4 h-4" />
@@ -227,9 +225,8 @@ export const CustomizationForm = ({ selectedTier, selectedTemplate }: Customizat
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-8 h-0.5 mx-2 ${
-                      currentStep > step.id ? "bg-gold" : "bg-border"
-                    }`}
+                    className={`w-8 h-0.5 mx-2 ${currentStep > step.id ? "bg-gold" : "bg-border"
+                      }`}
                   />
                 )}
               </div>

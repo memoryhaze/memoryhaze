@@ -12,6 +12,7 @@ interface AuthContextType {
     isAdmin: boolean;
     profile: User | null;
     isAuthenticated: boolean;
+    isLoading: boolean;
     login: (token: string) => void;
     logout: () => void;
     updateProfile: (user: User) => void;
@@ -23,6 +24,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const [token, setToken] = useState<string | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [profile, setProfile] = useState<User | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
     const navigate = useNavigate();
 
     // Decode JWT token to extract payload
@@ -58,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 localStorage.removeItem('token');
             }
         }
+        setIsLoading(false);
     }, []);
 
     const login = (newToken: string) => {
@@ -87,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAdmin,
         profile,
         isAuthenticated: !!token,
+        isLoading,
         login,
         logout,
         updateProfile,

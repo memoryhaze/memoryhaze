@@ -2,13 +2,12 @@ import { motion } from "framer-motion";
 import { useInView } from "framer-motion";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, Check, Heart, Sparkles, Star, Gift } from "lucide-react";
+import { Eye, Check, Heart, Sparkles, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   MinimalistLovePreview,
   GrandAnniversaryPreview,
   BirthdayCelebrationPreview,
-  RomanticEveningPreview,
 } from "@/components/templates";
 interface Template {
   id: string;
@@ -48,15 +47,6 @@ const templates: Template[] = [
     gradient: "from-purple-50 to-indigo-50",
     accent: "bg-purple-100",
   },
-  {
-    id: "romantic-evening",
-    name: "Romantic Evening",
-    description: "Deep, intimate colors for Valentine's Day",
-    icon: Star,
-    preview: "Dark romantic theme with starlight accents",
-    gradient: "from-slate-800 to-slate-900",
-    accent: "bg-slate-700",
-  },
 ];
 
 interface TemplateGalleryProps {
@@ -73,7 +63,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
   return (
     <section id="templates" className="py-24 bg-muted/30 relative">
       <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-      
+
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -100,15 +90,13 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
                 initial={{ opacity: 0, y: 40 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
-                className={`relative group cursor-pointer ${
-                  isSelected ? "ring-2 ring-gold ring-offset-4 ring-offset-background" : ""
-                }`}
+                className={`relative group cursor-pointer ${isSelected ? "ring-2 ring-gold ring-offset-4 ring-offset-background" : ""
+                  }`}
                 onClick={() => onSelectTemplate(template.id)}
               >
                 <div
-                  className={`rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 h-full ${
-                    isSelected ? "scale-[1.02]" : "hover:scale-[1.01]"
-                  }`}
+                  className={`rounded-xl overflow-hidden shadow-card hover:shadow-elevated transition-all duration-300 h-full ${isSelected ? "scale-[1.02]" : "hover:scale-[1.01]"
+                    }`}
                 >
                   {/* Preview Area */}
                   <div className={`h-48 bg-gradient-to-br ${template.gradient} relative overflow-hidden`}>
@@ -116,7 +104,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
                     <div className={`absolute top-4 right-4 w-12 h-12 rounded-full ${template.accent} flex items-center justify-center`}>
                       <template.icon className={`w-6 h-6 ${isDark ? "text-white" : "text-foreground/60"}`} />
                     </div>
-                    
+
                     {/* Mock content lines */}
                     <div className="absolute bottom-8 left-6 right-6 space-y-2">
                       <div className={`h-3 rounded ${isDark ? "bg-white/20" : "bg-foreground/10"} w-3/4`} />
@@ -197,15 +185,6 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
             onClose={() => setPreviewTemplate(null)}
             onSelect={() => {
               onSelectTemplate("birthday-celebration");
-              setPreviewTemplate(null);
-            }}
-          />
-        )}
-        {previewTemplate === "romantic-evening" && (
-          <RomanticEveningPreview
-            onClose={() => setPreviewTemplate(null)}
-            onSelect={() => {
-              onSelectTemplate("romantic-evening");
               setPreviewTemplate(null);
             }}
           />

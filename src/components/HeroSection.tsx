@@ -53,7 +53,7 @@ export const HeroSection = () => {
         >
           <Sparkles className="w-8 h-8" />
         </motion.div>
-        
+
         {/* Gradient orbs */}
         <div className="absolute top-20 right-[20%] w-72 h-72 bg-blush/20 rounded-full blur-3xl" />
         <div className="absolute bottom-20 left-[10%] w-96 h-96 bg-gold/10 rounded-full blur-3xl" />
@@ -103,8 +103,8 @@ export const HeroSection = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 text-balance"
           >
-            The ultimate personalized gift: a beautiful custom webpage and an original 
-            song written just for them. Perfect for birthdays, anniversaries, and 
+            The ultimate personalized gift: a beautiful custom webpage and an original
+            song written just for them. Perfect for birthdays, anniversaries, and
             Valentine's Day.
           </motion.p>
 
@@ -143,11 +143,13 @@ export const HeroSection = () => {
             className="mt-16 flex items-center justify-center gap-3 text-muted-foreground"
           >
             <div className="flex -space-x-2">
-              {[1, 2, 3, 4].map((i) => (
+              {['S', 'M', 'A', 'J'].map((letter, i) => (
                 <div
                   key={i}
-                  className="w-8 h-8 rounded-full bg-gradient-to-br from-blush to-secondary border-2 border-background"
-                />
+                  className="w-8 h-8 rounded-full bg-gradient-to-br from-blush-deep to-gold border-2 border-background shadow-sm flex items-center justify-center"
+                >
+                  <span className="text-xs font-bold text-white uppercase">{letter}</span>
+                </div>
               ))}
             </div>
             <span className="text-sm">{userCountDisplay} customers</span>

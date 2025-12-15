@@ -34,6 +34,7 @@ const App = () => (
             <Route path="/memories/:templateId" element={<MemoriesViewer />} />
             <Route path="/gifts" element={<Gifts />} />
             <Route path="/gifts/:giftId" element={<GiftViewer />} />
+            <Route path="/gifts/:giftId/:encryptedUserId" element={<GiftViewer />} />
             <Route
               path="/admin"
               element={

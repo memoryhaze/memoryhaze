@@ -7,7 +7,16 @@ interface ProtectedAdminRouteProps {
 }
 
 export const ProtectedAdminRoute: React.FC<ProtectedAdminRouteProps> = ({ children }) => {
-    const { isAuthenticated, isAdmin } = useAuth();
+    const { isAuthenticated, isAdmin, isLoading } = useAuth();
+
+    // Still loading → show loading spinner
+    if (isLoading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        );
+    }
 
     // Not authenticated → redirect to login
     if (!isAuthenticated) {

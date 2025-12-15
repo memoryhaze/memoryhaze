@@ -3,15 +3,40 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Search, Loader2, ChevronLeft, ChevronRight, Eye, EyeOff, PlusCircle } from "lucide-react";
+import { ArrowLeft, Search, Loader2, ChevronLeft, ChevronRight, Eye, EyeOff, PlusCircle, Trash2, RefreshCw } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface User {
     _id: string;
+    userId: string;
     email: string;
     createdAt: string;
+}
+
+interface Gift {
+    _id: string;
+    templateId: string;
+    createdAt: string;
+    assignedAt?: string;
+    expiresAt?: string | null;
+    accessEnabled?: boolean;
+    permanentlyDeleted?: boolean;
+    deletedAt?: string | null;
+    memory?: string | null;
+    plan?: string | null;
+    message?: string;
 }
 
 const AdminDashboard = () => {
@@ -37,10 +62,52 @@ const AdminDashboard = () => {
     const [userPlan, setUserPlan] = useState<Record<string, string>>({});
     const [userTemplateId, setUserTemplateId] = useState<Record<string, string>>({});
     const [userLyrics, setUserLyrics] = useState<Record<string, string>>({});
+    const [userMessage, setUserMessage] = useState<Record<string, string>>({});
     const [isUploading, setIsUploading] = useState<Record<string, boolean>>({});
     const [uploadError, setUploadError] = useState<Record<string, string | null>>({});
     const [imageUrlsByUser, setImageUrlsByUser] = useState<Record<string, string[]>>({});
     const [audioUrlByUser, setAudioUrlByUser] = useState<Record<string, string | null>>({});
+
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUserGifts, setSelectedUserGifts] = useState<Gift[]>([]);
+    const [giftsLoading, setGiftsLoading] = useState(false);
+    const [giftsRefreshing, setGiftsRefreshing] = useState(false);
+
+    const [confirmOpen, setConfirmOpen] = useState(false);
+    const [confirmTitle, setConfirmTitle] = useState('');
+    const [confirmDescription, setConfirmDescription] = useState('');
+    const [confirmActionLabel, setConfirmActionLabel] = useState('Confirm');
+    const [confirmIsDestructive, setConfirmIsDestructive] = useState(false);
+    const [confirmAction, setConfirmAction] = useState<null | (() => Promise<void> | void)>(null);
+
+    const formatOccasion = (occasion: string | null) => {
+        if (!occasion) return null;
+        switch (occasion.toLowerCase()) {
+            case "birthday":
+                return "Birthday";
+            case "anniversary":
+                return "Anniversary";
+            case "valentines":
+                return "Valentine's Day";
+            default:
+                return occasion;
+        }
+    };
+
+    const openConfirm = (opts: {
+        title: string;
+        description: string;
+        actionLabel: string;
+        destructive?: boolean;
+        onConfirm: () => Promise<void> | void;
+    }) => {
+        setConfirmTitle(opts.title);
+        setConfirmDescription(opts.description);
+        setConfirmActionLabel(opts.actionLabel);
+        setConfirmIsDestructive(!!opts.destructive);
+        setConfirmAction(() => opts.onConfirm);
+        setConfirmOpen(true);
+    };
 
     const handlePhotosChange = (userId: string, files: FileList | null) => {
         if (!files) return;
@@ -54,6 +121,94 @@ const AdminDashboard = () => {
             ...prev,
             [userId]: combined.slice(0, 4),
         }));
+    };
+
+    const fetchUserGifts = async (user: User, isRefresh = false) => {
+        if (isRefresh) setGiftsRefreshing(true);
+        else setGiftsLoading(true);
+        try {
+            const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_BASE}/api/admin/users/${user._id}/gifts`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                toast.error('Failed to load gifts', { description: data?.error || 'Server error' });
+                return;
+            }
+            setSelectedUser(user);
+            setSelectedUserGifts(Array.isArray(data?.gifts) ? data.gifts : []);
+        } catch {
+            toast.error('Failed to load gifts', { description: 'Failed to connect to server' });
+        } finally {
+            if (isRefresh) setGiftsRefreshing(false);
+            else setGiftsLoading(false);
+        }
+    };
+
+    const formatRemaining = (g: Gift) => {
+        if (g.permanentlyDeleted) return 'Deleted';
+        if (!g.expiresAt) return 'No expiry';
+        const exp = new Date(g.expiresAt);
+        const now = new Date();
+        const diff = exp.getTime() - now.getTime();
+        if (diff <= 0) return 'Expired';
+        const totalMinutes = Math.floor(diff / 60000);
+        const days = Math.floor(totalMinutes / (60 * 24));
+        const hours = Math.floor((totalMinutes % (60 * 24)) / 60);
+        const minutes = totalMinutes % 60;
+        const parts = [] as string[];
+        if (days) parts.push(`${days}d`);
+        if (hours || days) parts.push(`${hours}h`);
+        parts.push(`${minutes}m`);
+        return parts.join(' ');
+    };
+
+    const updateGiftAccess = async (giftId: string, nextEnabled: boolean) => {
+        try {
+            const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_BASE}/api/admin/gifts/${giftId}/access`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ accessEnabled: nextEnabled, resetExpiry: nextEnabled }),
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                toast.error('Failed to update access', {
+                    description: data?.error || data?.message || 'Server error',
+                });
+                return;
+            }
+            setSelectedUserGifts((prev) => prev.map((g) => (g._id === giftId ? data.gift : g)));
+        } catch {
+            toast.error('Failed to update access', { description: 'Failed to connect to server' });
+        }
+    };
+
+    const permanentlyDeleteGift = async (giftId: string) => {
+        try {
+            const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+            const res = await fetch(`${API_BASE}/api/admin/gifts/${giftId}/permanent`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                toast.error('Failed to permanently delete gift', {
+                    description: data?.error || data?.message || 'Server error',
+                });
+                return;
+            }
+            toast.success('Gift permanently deleted');
+            if (selectedUser) {
+                await fetchUserGifts(selectedUser, true);
+            }
+        } catch {
+            toast.error('Failed to permanently delete gift', { description: 'Failed to connect to server' });
+        }
     };
 
     const removePhotoAt = (userId: string, index: number) => {
@@ -153,7 +308,7 @@ const AdminDashboard = () => {
             // Refresh list to include new user
             fetchUsers(search, 1);
             setPage(1);
-        } catch (err:any) {
+        } catch (err: any) {
             toast.error('Error', { description: err?.message || 'Failed to create user' });
         } finally {
             setCreating(false);
@@ -188,6 +343,28 @@ const AdminDashboard = () => {
 
     return (
         <div className="min-h-screen bg-background flex flex-col items-center p-4 relative overflow-hidden">
+            <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>{confirmTitle}</AlertDialogTitle>
+                        <AlertDialogDescription>{confirmDescription}</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            className={confirmIsDestructive ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+                            onClick={async () => {
+                                setConfirmOpen(false);
+                                const fn = confirmAction;
+                                if (!fn) return;
+                                await fn();
+                            }}
+                        >
+                            {confirmActionLabel}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <Navbar hideMarketingLinks logoAsLinkTo="/" />
             {/* Decorative Elements */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
@@ -338,14 +515,19 @@ const AdminDashboard = () => {
                                         key={user._id}
                                         className="grid grid-cols-3 gap-4 px-4 py-3 border-b border-border/50 last:border-0 hover:bg-muted/10 transition-colors"
                                     >
-                                        <div className="flex items-center">
+                                        <button
+                                            type="button"
+                                            className="flex items-center text-left"
+                                            onClick={() => fetchUserGifts(user)}
+                                            title="View gifts for user"
+                                        >
                                             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
                                                 <span className="text-sm font-medium text-primary">
                                                     {user.email[0].toUpperCase()}
                                                 </span>
                                             </div>
                                             <span className="truncate">{user.email}</span>
-                                        </div>
+                                        </button>
                                         <div className="text-right flex items-center justify-end text-muted-foreground">
                                             {formatDate(user.createdAt)}
                                         </div>
@@ -420,16 +602,16 @@ const AdminDashboard = () => {
                                                         </div>
                                                         <div className="grid md:grid-cols-2 gap-5">
                                                             <div>
-                                                                <label className="text-sm font-semibold">Memory</label>
+                                                                <label className="text-sm font-semibold">Occasion</label>
                                                                 <select
                                                                     className="mt-2 w-full h-11 rounded-lg border border-border bg-white px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
                                                                     value={userMemoryType[user._id] || ''}
                                                                     onChange={(e) => setUserMemoryType((prev) => ({ ...prev, [user._id]: e.target.value }))}
                                                                 >
-                                                                    <option value="" disabled>Select memory</option>
+                                                                    <option value="" disabled>Select occasion</option>
                                                                     <option value="birthday">Birthday</option>
                                                                     <option value="anniversary">Anniversary</option>
-                                                                    <option value="valentines">Valentine</option>
+                                                                    <option value="valentines">Valentine's Day</option>
                                                                 </select>
                                                             </div>
                                                             <div>
@@ -448,7 +630,7 @@ const AdminDashboard = () => {
                                                         <div>
                                                             <label className="text-sm font-semibold">Scenarios</label>
                                                             <div className="mt-2 space-y-4">
-                                                                {([0,1,2] as const).map((idx) => (
+                                                                {([0, 1, 2] as const).map((idx) => (
                                                                     <textarea
                                                                         key={idx}
                                                                         className="w-full min-h-[180px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -465,25 +647,21 @@ const AdminDashboard = () => {
                                                             </div>
                                                         </div>
                                                         <div>
-                                                            <label className="text-sm font-semibold">Theme</label>
-                                                            <select
-                                                                className="mt-2 w-full h-11 rounded-lg border border-border bg-white px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 appearance-none"
-                                                                value={userTemplateId[user._id] || 'minimalist-love'}
-                                                                onChange={(e) => setUserTemplateId((prev) => ({ ...prev, [user._id]: e.target.value }))}
-                                                            >
-                                                                <option value="minimalist-love">Minimalist Love</option>
-                                                                <option value="grand-anniversary">Grand Anniversary</option>
-                                                                <option value="birthday-celebration">Birthday Celebration</option>
-                                                                <option value="romantic-evening">Romantic Evening</option>
-                                                            </select>
-                                                        </div>
-                                                        <div>
                                                             <label className="text-sm font-semibold">Lyrics</label>
                                                             <textarea
                                                                 className="mt-2 w-full min-h-[180px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
                                                                 placeholder="Paste or write lyrics here..."
                                                                 value={userLyrics[user._id] || ''}
                                                                 onChange={(e) => setUserLyrics((prev) => ({ ...prev, [user._id]: e.target.value }))}
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-sm font-semibold">Message</label>
+                                                            <textarea
+                                                                className="mt-2 w-full min-h-[140px] rounded-lg border border-border bg-white px-4 py-3 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
+                                                                placeholder="Write a message to the recipient..."
+                                                                value={userMessage[user._id] || ''}
+                                                                onChange={(e) => setUserMessage((prev) => ({ ...prev, [user._id]: e.target.value }))}
                                                             />
                                                         </div>
                                                     </div>
@@ -498,111 +676,217 @@ const AdminDashboard = () => {
                                                                 const cloudName = (import.meta as any).env?.VITE_CLOUDINARY_CLOUD_NAME || (import.meta as any).env?.REACT_APP_CLOUDINARY_CLOUD_NAME;
                                                                 const imgPreset = (import.meta as any).env?.VITE_CLOUDINARY_UPLOAD_PRESET || (import.meta as any).env?.REACT_APP_CLOUDINARY_UPLOAD_PRESET;
                                                                 const audioPreset = (import.meta as any).env?.VITE_CLOUDINARY_AUDIO_UPLOAD_PRESET || (import.meta as any).env?.REACT_APP_CLOUDINARY_AUDIO_UPLOAD_PRESET || imgPreset;
+
                                                                 if (!cloudName || !imgPreset) {
                                                                     toast.error('Cloudinary not configured', { description: 'Please set Cloudinary env vars.' });
                                                                     return;
                                                                 }
+
+                                                                // Validate required fields
                                                                 const images = userPhotos[user._id] || [];
                                                                 const audio = userAudio[user._id] || null;
+                                                                const memory = userMemoryType[user._id];
+                                                                const plan = userPlan[user._id];
+
+                                                                // Auto-map occasion to template
+                                                                const getTemplateFromOccasion = (occasion: string): string => {
+                                                                    switch (occasion) {
+                                                                        case 'birthday':
+                                                                            return 'birthday-celebration';
+                                                                        case 'anniversary':
+                                                                            return 'grand-anniversary';
+                                                                        case 'valentines':
+                                                                            return 'minimalist-love';
+                                                                        default:
+                                                                            return 'minimalist-love';
+                                                                    }
+                                                                };
+
+                                                                const templateId = memory ? getTemplateFromOccasion(memory) : 'minimalist-love';
+                                                                const scenarios = (userScenarios[user._id] || []).filter(Boolean);
+                                                                const lyrics = userLyrics[user._id] || '';
+                                                                const message = userMessage[user._id] || '';
+
                                                                 if (images.length === 0 && !audio) {
-                                                                    toast.error('Nothing to upload', { description: 'Add up to 4 images and/or one audio file.' });
+                                                                    toast.error('Missing files', { description: 'Please upload at least one image or audio file.' });
                                                                     return;
                                                                 }
+                                                                if (!memory) {
+                                                                    toast.error('Missing occasion', { description: 'Please select an occasion type.' });
+                                                                    return;
+                                                                }
+                                                                if (!plan) {
+                                                                    toast.error('Missing plan', { description: 'Please select a plan.' });
+                                                                    return;
+                                                                }
+
                                                                 setIsUploading((prev) => ({ ...prev, [user._id]: true }));
                                                                 setUploadError((prev) => ({ ...prev, [user._id]: null }));
+
                                                                 try {
-                                                                    const uploadImage = async (file: File) => {
+                                                                    const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+
+                                                                    // Step 1: Get the count of existing gifts for this user to determine folder name
+                                                                    let giftNumber = 1;
+                                                                    try {
+                                                                        const giftsRes = await fetch(`${API_BASE}/api/admin/users/${user._id}/gifts`, {
+                                                                            headers: { Authorization: `Bearer ${token}` },
+                                                                        });
+                                                                        if (giftsRes.ok) {
+                                                                            const giftsData = await giftsRes.json();
+                                                                            giftNumber = (giftsData?.gifts?.length || 0) + 1;
+                                                                        }
+                                                                    } catch (e) {
+                                                                        console.warn('Could not fetch existing gifts count, using default:', e);
+                                                                    }
+
+                                                                    // Step 2: Upload files to Cloudinary with folder structure: MemoryHaze/userId/gift{n}/
+                                                                    const folderPath = `MemoryHaze/${user.userId}/gift${giftNumber}`;
+
+                                                                    const uploadImage = async (file: File, index: number) => {
                                                                         const fd = new FormData();
                                                                         fd.append('file', file);
                                                                         fd.append('upload_preset', imgPreset);
+                                                                        // Include folder path in public_id for reliable folder structure
+                                                                        fd.append('public_id', `${folderPath}/photo_${index + 1}`);
+
                                                                         const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                                                                             method: 'POST',
                                                                             body: fd,
                                                                         });
-                                                                        if (!res.ok) throw new Error('Image upload failed');
-                                                                        const data = await res.json();
-                                                                        return data.secure_url as string;
-                                                                    };
-                                                                    const uploadAudio = async (file: File) => {
-                                                                        const fd = new FormData();
-                                                                        fd.append('file', file);
-                                                                        fd.append('upload_preset', audioPreset);
-                                                                        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
-                                                                            method: 'POST',
-                                                                            body: fd,
-                                                                        });
-                                                                        if (!res.ok) throw new Error('Audio upload failed');
+                                                                        if (!res.ok) {
+                                                                            const errorData = await res.json().catch(() => ({}));
+                                                                            throw new Error(errorData?.error?.message || 'Image upload failed');
+                                                                        }
                                                                         const data = await res.json();
                                                                         return data.secure_url as string;
                                                                     };
 
-                                                                    const imagePromises = images.map((f) => uploadImage(f));
+                                                                    const uploadAudio = async (file: File) => {
+                                                                        const fd = new FormData();
+                                                                        fd.append('file', file);
+                                                                        fd.append('upload_preset', audioPreset);
+                                                                        // Include folder path in public_id for reliable folder structure
+                                                                        fd.append('public_id', `${folderPath}/audio`);
+
+                                                                        const res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/video/upload`, {
+                                                                            method: 'POST',
+                                                                            body: fd,
+                                                                        });
+                                                                        if (!res.ok) {
+                                                                            const errorData = await res.json().catch(() => ({}));
+                                                                            throw new Error(errorData?.error?.message || 'Audio upload failed');
+                                                                        }
+                                                                        const data = await res.json();
+                                                                        return data.secure_url as string;
+                                                                    };
+
+                                                                    // Upload images
+                                                                    const imagePromises = images.map((f, idx) => uploadImage(f, idx));
                                                                     const imageResults = await Promise.allSettled(imagePromises);
                                                                     const succeededImages = imageResults
                                                                         .filter((r): r is PromiseFulfilledResult<string> => r.status === 'fulfilled')
                                                                         .map((r) => r.value);
                                                                     const failedImages = imageResults.filter((r) => r.status === 'rejected').length;
 
+                                                                    // Upload audio
                                                                     let uploadedAudioUrl: string | null = null;
                                                                     let audioFailed = false;
                                                                     if (audio) {
                                                                         try {
                                                                             uploadedAudioUrl = await uploadAudio(audio);
                                                                         } catch (e) {
+                                                                            console.error('Audio upload error:', e);
                                                                             audioFailed = true;
                                                                         }
                                                                     }
 
+                                                                    // Step 3: Save gift to backend
+                                                                    const payload = {
+                                                                        userId: user._id,
+                                                                        templateId,
+                                                                        scenarios,
+                                                                        memory,
+                                                                        plan,
+                                                                        photos: succeededImages,
+                                                                        audio: uploadedAudioUrl,
+                                                                        lyrics,
+                                                                        message,
+                                                                    };
+
+                                                                    const saveRes = await fetch(`${API_BASE}/api/admin/gifts`, {
+                                                                        method: 'POST',
+                                                                        headers: {
+                                                                            'Content-Type': 'application/json',
+                                                                            Authorization: `Bearer ${token}`,
+                                                                        },
+                                                                        body: JSON.stringify(payload),
+                                                                    });
+
+                                                                    if (!saveRes.ok) {
+                                                                        const saveData = await saveRes.json().catch(() => ({}));
+                                                                        console.error('Backend error response:', saveData);
+
+                                                                        let errorMsg = saveData?.error || 'Failed to create gift record';
+                                                                        if (saveData?.message) {
+                                                                            errorMsg += ': ' + saveData.message;
+                                                                        }
+                                                                        if (saveData?.details) {
+                                                                            const detailsStr = saveData.details.map((d: any) => `${d.field}: ${d.message}`).join(', ');
+                                                                            errorMsg += ' (' + detailsStr + ')';
+                                                                        }
+
+                                                                        throw new Error(errorMsg);
+                                                                    }
+
+                                                                    const savedGift = await saveRes.json();
+
+                                                                    // Step 4: Update local state
                                                                     setImageUrlsByUser((prev) => ({ ...prev, [user._id]: succeededImages }));
                                                                     setAudioUrlByUser((prev) => ({ ...prev, [user._id]: uploadedAudioUrl }));
 
-                                                                    // Persist gift record (frontend -> backend)
-                                                                    try {
-                                                                        const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
-                                                                        const payload = {
-                                                                            userId: user._id,
-                                                                            templateId: userTemplateId[user._id] || 'minimalist-love',
-                                                                            scenarios: (userScenarios[user._id] || []).filter(Boolean),
-                                                                            memory: userMemoryType[user._id] || null,
-                                                                            plan: userPlan[user._id] || null,
-                                                                            photos: succeededImages,
-                                                                            audio: uploadedAudioUrl,
-                                                                            lyrics: userLyrics[user._id] || '',
-                                                                        };
-                                                                        const saveRes = await fetch(`${API_BASE}/api/admin/gifts`, {
-                                                                            method: 'POST',
-                                                                            headers: {
-                                                                                'Content-Type': 'application/json',
-                                                                                Authorization: `Bearer ${token}`,
-                                                                            },
-                                                                            body: JSON.stringify(payload),
-                                                                        });
-                                                                        if (!saveRes.ok) {
-                                                                            const saveData = await saveRes.json().catch(() => ({}));
-                                                                            toast.error('Saved upload, but failed to create gift', { description: saveData?.error || 'Server error' });
-                                                                        }
-                                                                    } catch {
-                                                                        toast.error('Saved upload, but failed to create gift', { description: 'Failed to connect to server' });
+                                                                    // Step 5: Clear form data for this user
+                                                                    setUserPhotos((prev) => ({ ...prev, [user._id]: [] }));
+                                                                    setUserAudio((prev) => ({ ...prev, [user._id]: null }));
+                                                                    setUserScenarios((prev) => ({ ...prev, [user._id]: ['', '', ''] }));
+                                                                    setUserMemoryType((prev) => ({ ...prev, [user._id]: '' }));
+                                                                    setUserPlan((prev) => ({ ...prev, [user._id]: '' }));
+                                                                    setUserLyrics((prev) => ({ ...prev, [user._id]: '' }));
+                                                                    setUserMessage((prev) => ({ ...prev, [user._id]: '' }));
+
+                                                                    // Step 6: Refresh the gifts list if this user is selected
+                                                                    if (selectedUser && selectedUser._id === user._id) {
+                                                                        await fetchUserGifts(selectedUser, true);
                                                                     }
 
+                                                                    // Show success message
                                                                     if (failedImages || audioFailed) {
                                                                         const parts = [] as string[];
                                                                         if (failedImages) parts.push(`${failedImages} image(s) failed`);
                                                                         if (audioFailed) parts.push('audio failed');
-                                                                        setUploadError((prev) => ({ ...prev, [user._id]: parts.join(', ') }));
-                                                                        toast.error('Upload partially succeeded', { description: parts.join(', ') });
+                                                                        toast.warning('Gift created with some upload failures', {
+                                                                            description: parts.join(', ')
+                                                                        });
                                                                     } else {
-                                                                        toast.success('Upload complete', { description: `${succeededImages.length} image(s)${uploadedAudioUrl ? ' + audio' : ''} uploaded.` });
+                                                                        toast.success('Gift created successfully!', {
+                                                                            description: `${succeededImages.length} image(s)${uploadedAudioUrl ? ' + audio' : ''} uploaded to folder: ${folderPath}`
+                                                                        });
                                                                     }
+
+                                                                    // Close the dialog
+                                                                    const closeButton = document.querySelector('[data-state="open"] button[aria-label="Close"]') as HTMLElement;
+                                                                    closeButton?.click();
+
                                                                 } catch (err: any) {
+                                                                    console.error('Gift creation error:', err);
                                                                     setUploadError((prev) => ({ ...prev, [user._id]: err?.message || 'Upload failed' }));
-                                                                    toast.error('Upload failed', { description: err?.message || 'Cloudinary error' });
+                                                                    toast.error('Failed to create gift', { description: err?.message || 'An error occurred' });
                                                                 } finally {
                                                                     setIsUploading((prev) => ({ ...prev, [user._id]: false }));
                                                                 }
                                                             }}
                                                         >
-                                                            {isUploading[user._id] ? 'Uploading…' : 'Upload'}
+                                                            {isUploading[user._id] ? 'Creating Gift…' : 'Create Gift'}
                                                         </Button>
                                                     </DialogFooter>
                                                 </DialogContent>
@@ -611,6 +895,113 @@ const AdminDashboard = () => {
                                     </div>
                                 ))}
                             </>
+                        )}
+
+                        {selectedUser && (
+                            <div className="mt-8 rounded-2xl border border-border bg-white/70 backdrop-blur p-5">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <div className="text-sm text-muted-foreground">Gifts for</div>
+                                        <div className="font-semibold text-foreground truncate">{selectedUser.email}</div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => fetchUserGifts(selectedUser, true)}
+                                            disabled={giftsRefreshing}
+                                        >
+                                            <RefreshCw className={`w-4 h-4 mr-2 ${giftsRefreshing ? 'animate-spin' : ''}`} />
+                                            Refresh
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {giftsLoading ? (
+                                    <div className="flex justify-center items-center py-10">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    </div>
+                                ) : selectedUserGifts.length === 0 ? (
+                                    <div className="text-sm text-muted-foreground py-6">No gifts for this user yet.</div>
+                                ) : (
+                                    <div className="mt-4 space-y-3">
+                                        {selectedUserGifts.map((g) => {
+                                            const isDeleted = !!g.permanentlyDeleted;
+                                            const enabled = !!g.accessEnabled;
+                                            const remaining = formatRemaining(g);
+                                            return (
+                                                <div key={g._id} className="rounded-xl border border-border bg-white p-4">
+                                                    <div className="flex items-start justify-between gap-4">
+                                                        <div className="min-w-0">
+                                                            <div className="font-semibold truncate">{g.templateId}</div>
+                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                                Created: {new Date(g.createdAt).toLocaleString()}
+                                                            </div>
+                                                            <div className="text-xs text-muted-foreground mt-1">
+                                                                {g.plan ? `Plan: ${g.plan}` : null}
+                                                                {g.plan && g.memory ? ' • ' : null}
+                                                                {g.memory ? `Occasion: ${formatOccasion(g.memory)}` : null}
+                                                            </div>
+                                                            <div className="text-sm mt-2">
+                                                                <span className="text-muted-foreground">Remaining: </span>
+                                                                <span className={remaining === 'Expired' || remaining === 'Deleted' ? 'text-destructive' : 'text-foreground'}>
+                                                                    {remaining}
+                                                                </span>
+                                                            </div>
+                                                            <div className="text-sm mt-1">
+                                                                <span className="text-muted-foreground">Access: </span>
+                                                                <span className={enabled && !isDeleted ? 'text-foreground' : 'text-destructive'}>
+                                                                    {isDeleted ? 'Deleted' : enabled ? 'Enabled' : 'Disabled/Expired'}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex flex-col gap-2">
+                                                            <Button
+                                                                type="button"
+                                                                variant="outline"
+                                                                size="sm"
+                                                                disabled={isDeleted}
+                                                                onClick={() => {
+                                                                    const nextEnabled = !enabled;
+                                                                    openConfirm({
+                                                                        title: nextEnabled ? 'Grant access?' : 'Revoke access?',
+                                                                        description: nextEnabled
+                                                                            ? 'This user will be able to open this gift again.'
+                                                                            : 'This user will no longer be able to open this gift.',
+                                                                        actionLabel: nextEnabled ? 'Grant' : 'Revoke',
+                                                                        destructive: !nextEnabled,
+                                                                        onConfirm: () => updateGiftAccess(g._id, nextEnabled),
+                                                                    });
+                                                                }}
+                                                            >
+                                                                {enabled ? 'Revoke' : 'Grant'}
+                                                            </Button>
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => {
+                                                                    openConfirm({
+                                                                        title: 'Permanently delete this gift?',
+                                                                        description: 'This will remove the uploaded assets and permanently revoke access. This action cannot be undone.',
+                                                                        actionLabel: 'Delete permanently',
+                                                                        destructive: true,
+                                                                        onConfirm: () => permanentlyDeleteGift(g._id),
+                                                                    });
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-4 h-4 mr-2" />
+                                                                Permanent
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
                         )}
 
                         {/* Pagination */}
