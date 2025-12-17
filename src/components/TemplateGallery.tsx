@@ -79,7 +79,7 @@ export const TemplateGallery = ({ selectedTemplate, onSelectTemplate }: Template
           </p>
         </motion.div>
 
-        <div ref={ref} className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        <div ref={ref} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {templates.map((template, index) => {
             const isSelected = selectedTemplate === template.id;
             const isDark = template.id === "romantic-evening";

@@ -27,7 +27,7 @@ const tiers: Tier[] = [
     features: [
       { text: "Custom Web Page", icon: FileText },
       { text: "Page expires in 7 days", icon: Check },
-      { text: "Up to 10 photo uploads", icon: Image },
+      { text: "Up to 4 photo uploads", icon: Image },
       { text: "Private shareable link", icon: Check },
       { text: "No revisions", icon: Check },
     ],
@@ -76,7 +76,7 @@ export const TierPricing = ({ onSelectTier }: TierPricingProps) => {
             Choose Your Experience
           </h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Select the perfect tier to create an unforgettable gift that speaks 
+            Select the perfect tier to create an unforgettable gift that speaks
             from the heart.
           </p>
         </motion.div>
@@ -88,9 +88,8 @@ export const TierPricing = ({ onSelectTier }: TierPricingProps) => {
               initial={{ opacity: 0, y: 40 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: index * 0.2 }}
-              className={`relative rounded-2xl overflow-hidden ${
-                tier.popular ? "ring-2 ring-gold shadow-glow" : "shadow-card"
-              }`}
+              className={`relative rounded-2xl overflow-hidden ${tier.popular ? "ring-2 ring-gold shadow-glow" : "shadow-card"
+                }`}
             >
               {/* Popular badge */}
               {tier.popular && (
@@ -101,15 +100,13 @@ export const TierPricing = ({ onSelectTier }: TierPricingProps) => {
               )}
 
               <div
-                className={`bg-gradient-to-br ${tier.gradient} p-8 ${
-                  tier.popular ? "pt-14" : ""
-                } h-full flex flex-col`}
+                className={`bg-gradient-to-br ${tier.gradient} p-8 ${tier.popular ? "pt-14" : ""
+                  } h-full flex flex-col`}
               >
                 {/* Header */}
                 <div className="flex items-start gap-4 mb-6">
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                    tier.popular ? "bg-gold/20" : "bg-blush/30"
-                  }`}>
+                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${tier.popular ? "bg-gold/20" : "bg-blush/30"
+                    }`}>
                     <tier.icon className={`w-7 h-7 ${tier.popular ? "text-gold" : "text-blush-deep"}`} />
                   </div>
                   <div>
@@ -134,9 +131,8 @@ export const TierPricing = ({ onSelectTier }: TierPricingProps) => {
                 <ul className="space-y-4 mb-8 flex-grow">
                   {tier.features.map((feature, i) => (
                     <li key={i} className="flex items-start gap-3">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                        tier.popular ? "bg-gold/20 text-gold" : "bg-blush/30 text-blush-deep"
-                      }`}>
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${tier.popular ? "bg-gold/20 text-gold" : "bg-blush/30 text-blush-deep"
+                        }`}>
                         <Check className="w-3 h-3" />
                       </div>
                       <span className="text-foreground">{feature.text}</span>
